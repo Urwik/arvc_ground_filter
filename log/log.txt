@@ -1,0 +1,161 @@
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:14:42
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: ratio
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.719181
+	Precision: 0.790863
+	Recall: 0.778895
+	F1 Score: 0.769841
+	TP: 26027
+	FP: 7256
+	FN: 7404
+	TN: 11012
+
+Average Computation Time: 275 ms
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:19:17
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: module
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.774208
+	Precision: 0.934992
+	Recall: 0.682122
+	F1 Score: 0.767163
+	TP: 22927
+	FP: 1168
+	FN: 10504
+	TN: 17101
+
+Average Computation Time: 546 ms
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:23:48
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: hybrid
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.772701
+	Precision: 0.934843
+	Recall: 0.679528
+	F1 Score: 0.764467
+	TP: 22840
+	FP: 1159
+	FN: 10590
+	TN: 17109
+
+Average Computation Time: 818 ms
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:28:20
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: wofine
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.765369
+	Precision: -nan
+	Recall: 0.666648
+	F1 Score: -nan
+	TP: 22438
+	FP: 1132
+	FN: 10992
+	TN: 17136
+
+Average Computation Time: 915 ms
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:29:56
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: wocoarse_ratio
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.351448
+	Precision: -nan
+	Recall: 0.000000
+	F1 Score: -nan
+	TP: 0
+	FP: 0
+	FN: 33431
+	TN: 18269
+
+Average Computation Time: 1134 ms
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:33:36
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: wocoarse_module
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.351448
+	Precision: -nan
+	Recall: 0.000000
+	F1 Score: -nan
+	TP: 0
+	FP: 0
+	FN: 33431
+	TN: 18269
+
+Average Computation Time: 1356 ms
+------------------------------------------------------------
+
+Date and Time: 2024-04-10 18:37:17
+Current directory: /home/fran/datasets/icinco/00/pcd
+Mode: wocoarse_hybrid
+Node Length: 2.000000
+Node Width: 0.200000
+SAC Threshold: 0.500000
+Voxel Size: 0.050000
+Density Filter: 1
+Density Threshold: 5.000000
+Density Radius: 0.100000
+Metrics: 
+	Accuracy: 0.351448
+	Precision: -nan
+	Recall: 0.000000
+	F1 Score: -nan
+	TP: 0
+	FP: 0
+	FN: 33431
+	TN: 18269
+
+Average Computation Time: 1575 ms

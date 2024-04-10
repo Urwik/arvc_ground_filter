@@ -39,6 +39,7 @@ public:
     pcl::IndicesPtr coarse_truss_idx;
 
     vector<pcl::PointIndices> regrow_clusters;
+    vector<pcl::PointIndices> euclid_clusters;
     vector<int> valid_clusters;
 
     pcl::IndicesPtr truss_idx;

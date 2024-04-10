@@ -7,9 +7,9 @@ density:
   radius: 0.1 #0.1
   threshold: 5 #5
 
-MODE: "hybrid"
-NODE_LENGTH: 2.0
+MODE: "ratio"
+NODE_LENGTH: 1.0
 NODE_WIDTH: 0.2
 SAC_THRESHOLD: 0.5
 VOXEL_SIZE: 0.05 
-CROP_SET: 100
+CROP_SET: 0

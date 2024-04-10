@@ -1,22 +1,43 @@
 #include "arvc_ground_filter/ground_filter.hpp"
 #include "custom_logger.hpp"
 #include <yaml-cpp/yaml.h>
+#include <cstdlib> // For std::getenv
+
 
 int main(int argc, char **argv)
 {
     std::cout << YELLOW << "Running your code..." << RESET << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
 
-    YAML::Node config = YAML::LoadFile("/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/config/config.yaml");
+    const char* homeDir = std::getenv("HOME");
+    const string homePath = homeDir;
 
-    Logger myLog("/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/log/log.txt");
+    YAML::Node config = YAML::LoadFile(homePath + "/workSpaces/arvc_ws/src/arvc_ground_filter/config/config.yaml");
+
+    fs::path cur_dir = fs::current_path();
+    Logger myLog(cur_dir.parent_path().string() + "/log.txt");
+
+    int NUM_OF_MODES = 7;
+
+for (int i = 0; i < NUM_OF_MODES; i++)
+{
+    MODE modo = static_cast<MODE>(i);
+    
+    myLog.log("------------------------------------------------------------\n");
+
+    std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::ostringstream oss;
+    oss << std::put_time(std::localtime(&now_c), "%F %T");
+    std::string strDateTime = oss.str();
+
+    myLog.log("Date and Time: " + strDateTime);
 
     // CONFIGURATION PARAMS
     const bool EN_DEBUG  = config["EN_DEBUG"].as<bool>();
     const bool EN_VISUAL = config["EN_VISUAL"].as<bool>();
     const bool EN_METRIC = config["EN_METRIC"].as<bool>();
 
-    const MODE modo = parse_MODE(config["MODE"].as<string>());
+    // const MODE modo = parse_MODE(config["MODE"].as<string>());
     const float NODE_LENGTH   = config["NODE_LENGTH"].as<float>();
     const float NODE_WIDTH    = config["NODE_WIDTH"].as<float>();
     const float SAC_THRESHOLD = config["SAC_THRESHOLD"].as<float>();
@@ -42,6 +63,16 @@ int main(int argc, char **argv)
 
         fs::path current_dir = fs::current_path();
 
+        myLog.log("Current directory: " + current_dir.string());
+        myLog.log("Mode: " + to_string(static_cast<int>(modo)));
+        myLog.log("Node Length: " + to_string(NODE_LENGTH));
+        myLog.log("Node Width: " + to_string(NODE_WIDTH));
+        myLog.log("SAC Threshold: " + to_string(SAC_THRESHOLD));
+        myLog.log("Voxel Size: " + to_string(VOXEL_SIZE));
+        myLog.log("Density Filter: " + to_string(EN_DENSITY_FILTER));
+        myLog.log("Density Threshold: " + to_string(DENSITY_THRESHOLD));
+        myLog.log("Density Radius: " + to_string(DENSITY_RADIUS));
+        
         // Save all the paths of the clouds in the current directory for the tqdm loop
         std::vector<fs::path> path_vector;
         for (const auto &entry : fs::directory_iterator(current_dir))
@@ -51,8 +82,10 @@ int main(int argc, char **argv)
         }
         dataset_size = path_vector.size();
 
-        if (CROP_SET < dataset_size)
+        if (CROP_SET != 0) {
+            myLog.log("Crop Set: " + to_string(CROP_SET));
             path_vector.resize(CROP_SET);
+        }
 
         // tqdm loop
         for (const fs::path &entry : tq::tqdm(path_vector))
@@ -158,8 +191,10 @@ int main(int argc, char **argv)
 
     // PLOT METRICS
 
-    if (EN_METRIC)
+    if (EN_METRIC) {
         global_metrics.plotMetrics();
+        myLog.log(global_metrics.getString());
+    }
 
     // PRINT COMPUTATION TIME
     auto stop = std::chrono::high_resolution_clock::now();
@@ -170,8 +205,11 @@ int main(int argc, char **argv)
     std::cout << "Total Computation Time: " << duration.count() << " ms" << std::endl;
     std::cout << "Computation time without normal estimation: " << duration.count() - normals_time << " ms" << std::endl;
     std::cout << "Evaluated clouds: " << dataset_size << std::endl;
-    cout << "Average Computation Time: " << duration.count() / dataset_size << " ms" << endl;
-    cout << "Average Computation Time Without normal estimation and metrics: " << (duration.count() - normals_time - metrics_time) / dataset_size << " ms" << endl;
+    std::cout << "Average Computation Time: " << duration.count() / dataset_size << " ms" << endl;
+    std::cout << "Average Computation Time Without normal estimation and metrics: " << (duration.count() - normals_time - metrics_time) / dataset_size << " ms" << endl;
 
+    myLog.log("Average Computation Time: " + to_string(duration.count() / dataset_size) + " ms");
+
+}
     return 0;
 }

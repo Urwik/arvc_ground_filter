@@ -217,6 +217,22 @@ void GroundFilter::density_filter(){
   this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
 }
 
+void GroundFilter::euclidean_clustering(){
+  this->cons.debug("Euclidean clustering");
+
+  pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
+  tree->setInputCloud(this->cloud_in);
+
+  pcl::EuclideanClusterExtraction<PointT> ec;
+  ec.setClusterTolerance(0.5);
+  ec.setMinClusterSize(100);
+  ec.setMaxClusterSize(25000);
+  ec.setSearchMethod(tree);
+  ec.setInputCloud(this->cloud_in);
+  ec.setIndices(this->truss_idx);
+  ec.extract(this->euclid_clusters);
+}
+
 void GroundFilter::update_segmentation(){
   // Update truss and ground indices for final segmentation
   *this->truss_idx = *this->coarse_truss_idx;
