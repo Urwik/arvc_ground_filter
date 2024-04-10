@@ -1,4 +1,5 @@
 #include "arvc_ground_filter/ground_filter.hpp"
+#include "custom_logger.hpp"
 #include <yaml-cpp/yaml.h>
 
 int main(int argc, char **argv)
@@ -7,6 +8,8 @@ int main(int argc, char **argv)
     auto start = std::chrono::high_resolution_clock::now();
 
     YAML::Node config = YAML::LoadFile("/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/config/config.yaml");
+
+    Logger myLog("/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/log/log.txt");
 
     // CONFIGURATION PARAMS
     const bool EN_DEBUG  = config["EN_DEBUG"].as<bool>();
