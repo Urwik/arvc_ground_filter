@@ -213,7 +213,7 @@ void GroundFilter::validate_clusters(){
 void GroundFilter::density_filter(){
   this->cons.debug("Density filter");
 
-  this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, 0.1f, 5, false);
+  this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
   this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
 }
 

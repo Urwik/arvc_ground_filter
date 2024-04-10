@@ -1,7 +1,12 @@
 EN_DEBUG: false
 EN_VISUAL: false
 EN_METRIC: true
-EN_DENSITY_FILTER: true
+
+density:
+  enable: true
+  radius: 0.1 #0.1
+  threshold: 5 #5
+
 MODE: "hybrid"
 NODE_LENGTH: 2.0
 NODE_WIDTH: 0.2

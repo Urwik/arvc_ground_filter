@@ -59,6 +59,8 @@ public:
     float ratio_threshold;
     float ransac_threshold;
     float voxel_size;
+    float density_radius;
+    int density_threshold;
 
 
     MODE mode;
@@ -76,7 +78,7 @@ private:
 
     string cloud_id;
 
-    float node_length, node_width, sac_threshold, density_radius, density_threshold;
+    float node_length, node_width, sac_threshold;
 
 public:
 
@@ -106,6 +108,8 @@ private:
     void fine_segmentation();
 
     void density_filter();
+
+    void euclidean_clustering();
 
     bool valid_ratio(pcl::IndicesPtr &_cluster_indices);
 

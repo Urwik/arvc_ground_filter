@@ -18,8 +18,11 @@ int main(int argc, char **argv)
     const float NODE_WIDTH    = config["NODE_WIDTH"].as<float>();
     const float SAC_THRESHOLD = config["SAC_THRESHOLD"].as<float>();
     const float VOXEL_SIZE    = config["VOXEL_SIZE"].as<float>(); // 0.05
-    const bool EN_DENSITY_FILTER = config["EN_DENSITY_FILTER"].as<bool>();
     const int CROP_SET = config["CROP_SET"].as<int>();
+
+    const bool EN_DENSITY_FILTER = config["density"]["enable"].as<bool>();
+    const float DENSITY_THRESHOLD = config["density"]["threshold"].as<int>();
+    const float DENSITY_RADIUS = config["density"]["radius"].as<float>();
 
 
     // VARIABLES UTILITIES
@@ -64,6 +67,8 @@ int main(int argc, char **argv)
             gf.cons.enable_vis = EN_VISUAL;
             gf.enable_metrics = EN_METRIC;
             gf.enable_density_filter = EN_DENSITY_FILTER;
+            gf.density_radius = DENSITY_RADIUS;
+            gf.density_threshold = DENSITY_THRESHOLD;
             gf.set_voxel_size(VOXEL_SIZE);
 
             gf.set_input_cloud(input_cloud);
