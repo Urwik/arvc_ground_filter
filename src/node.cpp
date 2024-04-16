@@ -1,5 +1,4 @@
 #include "arvc_ground_filter/ground_filter.hpp"
-#include "custom_logger.hpp"
 #include <yaml-cpp/yaml.h>
 #include <cstdlib> // For std::getenv
 
@@ -15,63 +14,44 @@ int main(int argc, char **argv)
     YAML::Node config = YAML::LoadFile(homePath + "/workSpaces/arvc_ws/src/arvc_ground_filter/config/config.yaml");
 
     fs::path cur_dir = fs::current_path();
-    Logger myLog(cur_dir.parent_path().string() + "/log.txt");
-
-    int NUM_OF_MODES = 7;
-
-for (int i = 0; i < NUM_OF_MODES; i++)
-{
-    MODE modo = static_cast<MODE>(i);
-    
-    myLog.log("------------------------------------------------------------\n");
-
-    std::time_t now_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::ostringstream oss;
-    oss << std::put_time(std::localtime(&now_c), "%F %T");
-    std::string strDateTime = oss.str();
-
-    myLog.log("Date and Time: " + strDateTime);
 
     // CONFIGURATION PARAMS
     const bool EN_DEBUG  = config["EN_DEBUG"].as<bool>();
     const bool EN_VISUAL = config["EN_VISUAL"].as<bool>();
     const bool EN_METRIC = config["EN_METRIC"].as<bool>();
 
-    // const MODE modo = parse_MODE(config["MODE"].as<string>());
+
+    const bool DEN_FIRST = config["DENSITY"]["first"].as<bool>();
+    const bool EN_DENSITY_FILTER    = config["DENSITY"]["enable"].as<bool>();
+    const float DENSITY_RADIUS      = config["DENSITY"]["radius"].as<float>();
+    const float DENSITY_THRESHOLD   = config["DENSITY"]["threshold"].as<int>();
+
+    const bool EN_EUCLIDEAN     = config["EUCLID"]["enable"].as<bool>();
+    const float EUCLID_RADIUS   = config["EUCLID"]["radius"].as<float>();
+    const int EUCLID_MIN_SIZE   = config["EUCLID"]["min_size"].as<int>();
+
+    const MODE modo           = parse_MODE(config["MODE"].as<string>());
     const float NODE_LENGTH   = config["NODE_LENGTH"].as<float>();
     const float NODE_WIDTH    = config["NODE_WIDTH"].as<float>();
     const float SAC_THRESHOLD = config["SAC_THRESHOLD"].as<float>();
     const float VOXEL_SIZE    = config["VOXEL_SIZE"].as<float>(); // 0.05
     const int CROP_SET = config["CROP_SET"].as<int>();
 
-    const bool EN_DENSITY_FILTER = config["density"]["enable"].as<bool>();
-    const float DENSITY_THRESHOLD = config["density"]["threshold"].as<int>();
-    const float DENSITY_RADIUS = config["density"]["radius"].as<float>();
-
-
     // VARIABLES UTILITIES
     arvc::Metrics global_metrics;
-
-    vector<float> by_module_f1;
-    vector<float> by_hybrid_f1;
     
-    int normals_time = 0, metrics_time = 0, dataset_size = 0;
+    int normals_time = 0;
+    int metrics_time = 0;
+    int dataset_size = 0;
+
+    float coarse_ground_size_ratio = 0.0;
+
+    string best_recall_cloud;
+    float best_recall = 0;
 
     // COMPUTE THE ALGORITHM FOR EVERY CLOUD IN THE CURRENT FOLDER
-    if (argc == 1)
-    {
-
+    if (argc == 1) {
         fs::path current_dir = fs::current_path();
-
-        myLog.log("Current directory: " + current_dir.string());
-        myLog.log("Mode: " + to_string(static_cast<int>(modo)));
-        myLog.log("Node Length: " + to_string(NODE_LENGTH));
-        myLog.log("Node Width: " + to_string(NODE_WIDTH));
-        myLog.log("SAC Threshold: " + to_string(SAC_THRESHOLD));
-        myLog.log("Voxel Size: " + to_string(VOXEL_SIZE));
-        myLog.log("Density Filter: " + to_string(EN_DENSITY_FILTER));
-        myLog.log("Density Threshold: " + to_string(DENSITY_THRESHOLD));
-        myLog.log("Density Radius: " + to_string(DENSITY_RADIUS));
         
         // Save all the paths of the clouds in the current directory for the tqdm loop
         std::vector<fs::path> path_vector;
@@ -83,7 +63,6 @@ for (int i = 0; i < NUM_OF_MODES; i++)
         dataset_size = path_vector.size();
 
         if (CROP_SET != 0) {
-            myLog.log("Crop Set: " + to_string(CROP_SET));
             path_vector.resize(CROP_SET);
         }
 
@@ -94,21 +73,31 @@ for (int i = 0; i < NUM_OF_MODES; i++)
             pcl::PointCloud<pcl::PointXYZL>::Ptr input_cloud = read_cloud(entry);
             
             GroundFilter gf;
-            gf.set_mode(modo);
-            gf.set_node_length(NODE_LENGTH);
-            gf.set_node_width(NODE_WIDTH);
-            gf.set_sac_threshold(SAC_THRESHOLD);
-
+            
             gf.cons.enable = EN_DEBUG;
             gf.cons.enable_vis = EN_VISUAL;
             gf.enable_metrics = EN_METRIC;
+
+            gf.set_node_length(NODE_LENGTH);
+            gf.set_node_width(NODE_WIDTH);
+            gf.set_sac_threshold(SAC_THRESHOLD);
+            gf.set_voxel_size(VOXEL_SIZE);
+
+            gf.density_first = DEN_FIRST;
             gf.enable_density_filter = EN_DENSITY_FILTER;
             gf.density_radius = DENSITY_RADIUS;
             gf.density_threshold = DENSITY_THRESHOLD;
-            gf.set_voxel_size(VOXEL_SIZE);
 
+            gf.enable_euclidean_clustering = EN_EUCLIDEAN;
+            gf.cluster_radius = EUCLID_RADIUS;
+            gf.cluster_min_size = EUCLID_MIN_SIZE;
+
+            gf.set_mode(modo);
             gf.set_input_cloud(input_cloud);
             gf.compute();
+        
+            std::cout << entry.stem() <<": " << "Coarse ground size: " << gf.coarse_ground_idx->size() << std::endl;
+            coarse_ground_size_ratio += gf.coarse_ground_idx->size() / input_cloud->size();
 
             // GET IMPORTANT CLOUDS
 /*             float recall_hybrid = gf.metricas.values.recall;
@@ -122,6 +111,11 @@ for (int i = 0; i < NUM_OF_MODES; i++)
 
             normals_time += gf.normals_time;
             metrics_time += gf.metrics_time;
+            if (gf.metricas.values.recall > best_recall)
+            {
+                best_recall = gf.metricas.values.recall;
+                best_recall_cloud = entry.stem();
+            }
 
             if (EN_METRIC)
             {
@@ -138,33 +132,37 @@ for (int i = 0; i < NUM_OF_MODES; i++)
     }
 
     // COMPUTE THE ALGORITHM ONLY ONE CLOUD PASSED AS ARGUMENT IN CURRENT FOLDER
-    else if (argc == 3)
+    else if (argc == 2)
     {
         fs::path entry = argv[1];
+        std::cout << "Processing cloud: " << entry << std::endl;
         pcl::PointCloud<pcl::PointXYZL>::Ptr input_cloud = read_cloud(entry);
 
-        MODE modo = parse_MODE(argv[2]);
-        
         GroundFilter gf;
-        gf.set_mode(modo);
-        gf.set_node_length(NODE_LENGTH);
-        gf.set_node_width(NODE_WIDTH);
-        gf.set_sac_threshold(SAC_THRESHOLD);
-
+        
         gf.cons.enable = EN_DEBUG;
         gf.cons.enable_vis = EN_VISUAL;
         gf.enable_metrics = EN_METRIC;
-        gf.enable_density_filter = EN_DENSITY_FILTER;
+
+        gf.set_node_length(NODE_LENGTH);
+        gf.set_node_width(NODE_WIDTH);
+        gf.set_sac_threshold(SAC_THRESHOLD);
         gf.set_voxel_size(VOXEL_SIZE);
-        
+
+        gf.density_first = DEN_FIRST;
+        gf.enable_density_filter = EN_DENSITY_FILTER;
+        gf.density_radius = DENSITY_RADIUS;
+        gf.density_threshold = DENSITY_THRESHOLD;
+
+        gf.enable_euclidean_clustering = EN_EUCLIDEAN;
+        gf.cluster_radius = EUCLID_RADIUS;
+        gf.cluster_min_size = EUCLID_MIN_SIZE;
+
         gf.set_mode(modo);
         gf.set_input_cloud(input_cloud);
         gf.compute();
 
-
-        gf.cons.enable_vis  = EN_VISUAL;
-        gf.cons.enable      = EN_DEBUG;
-        gf.enable_metrics   = EN_METRIC;
+        coarse_ground_size_ratio += gf.coarse_ground_idx->size() / input_cloud->size();
 
         normals_time += gf.normals_time;
         metrics_time += gf.metrics_time;
@@ -193,23 +191,22 @@ for (int i = 0; i < NUM_OF_MODES; i++)
 
     if (EN_METRIC) {
         global_metrics.plotMetrics();
-        myLog.log(global_metrics.getString());
     }
 
     // PRINT COMPUTATION TIME
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
+    int avg_time = (int) floor((duration.count() - metrics_time) / dataset_size);
+    float avg_coarse_ground_size_ratio = coarse_ground_size_ratio / dataset_size;
+
+    std::cout << "Coarse ground size ratio: " << avg_coarse_ground_size_ratio << std::endl;
+
+
+    std::cout << "Num of Evaluated clouds: " << dataset_size << std::endl;
+    std::cout << "Average Computation Time: " << avg_time << " ms" << endl;
+
+    std::cout << BLUE << "Best recall: " << best_recall_cloud << RESET << endl;
     std::cout << YELLOW << "Code end!!" << RESET << std::endl;
-
-    std::cout << "Total Computation Time: " << duration.count() << " ms" << std::endl;
-    std::cout << "Computation time without normal estimation: " << duration.count() - normals_time << " ms" << std::endl;
-    std::cout << "Evaluated clouds: " << dataset_size << std::endl;
-    std::cout << "Average Computation Time: " << duration.count() / dataset_size << " ms" << endl;
-    std::cout << "Average Computation Time Without normal estimation and metrics: " << (duration.count() - normals_time - metrics_time) / dataset_size << " ms" << endl;
-
-    myLog.log("Average Computation Time: " + to_string(duration.count() / dataset_size) + " ms");
-
-}
     return 0;
 }

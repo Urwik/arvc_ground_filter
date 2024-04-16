@@ -55,25 +55,31 @@ public:
 
     bool enable_metrics;
     bool enable_density_filter;
+    bool enable_euclidean_clustering;
 
-    float module_threshold;
     float ratio_threshold;
+    float module_threshold;
     float ransac_threshold;
     float voxel_size;
+    bool density_first;
     float density_radius;
     int density_threshold;
 
+    float cluster_radius;
+    int cluster_min_size;
 
     MODE mode;
     arvc::console cons;
-
+    
+    pcl::IndicesPtr gt_truss_idx;
+    pcl::IndicesPtr gt_ground_idx;
 
 private:
     PointCloud::Ptr cloud_in;
+    pcl::PointCloud<pcl::PointXYZL>::Ptr cloud_in_labeled;
     pcl::PointCloud<pcl::PointXYZL>::Ptr cloud_out;
 
-    pcl::IndicesPtr gt_truss_idx;
-    pcl::IndicesPtr gt_ground_idx;
+
 
     pcl::IndicesPtr tp_idx, fp_idx, fn_idx, tn_idx;
 
@@ -154,5 +160,26 @@ MODE parse_MODE(const std::string& mode) {
         return MODE::HYBRID;
     } else {
         return MODE::HYBRID;
+    }
+}
+
+string parse_MODE(MODE mode) {
+    switch (mode) {
+        case MODE::WOFINE:
+            return "wofine";
+        case MODE::WOCOARSE_RATIO:
+            return "wocoarse_ratio";
+        case MODE::WOCOARSE_MODULE:
+            return "wocoarse_module";
+        case MODE::WOCOARSE_HYBRID:
+            return "wocoarse_hybrid";
+        case MODE::RATIO:
+            return "ratio";
+        case MODE::MODULE:
+            return "module";
+        case MODE::HYBRID:
+            return "hybrid";
+        default:
+            return "none";
     }
 }

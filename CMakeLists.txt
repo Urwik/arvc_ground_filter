@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PCL 1.10 REQUIRED)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Yaml-cpp REQUIRED)
+find_package(Threads REQUIRED)
 
 include_directories(include  ${PCL_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS} ${Eigen3_LIBRARY_DIRS} ${YAML_CPP_LIBRARY_DIRS})
@@ -57,3 +58,6 @@ target_link_libraries(arvc_ground_filter ${PCL_LIBRARIES} ${Eigen3_LIBRARIES})
 
 add_executable(ground_filter_node src/node.cpp)
 target_link_libraries(ground_filter_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
+
+add_executable(experiment_queue_node src/experiment_queue.cpp)
+target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})

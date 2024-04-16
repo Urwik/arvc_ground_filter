@@ -7,6 +7,7 @@ GroundFilter::GroundFilter() {
 
   this->cloud_in = PointCloud::Ptr (new PointCloud);
   this->cloud_out = pcl::PointCloud<pcl::PointXYZL>::Ptr (new pcl::PointCloud<pcl::PointXYZL>);
+  this->cloud_in_labeled = pcl::PointCloud<pcl::PointXYZL>::Ptr (new pcl::PointCloud<pcl::PointXYZL>);
 
   this->coarse_ground_idx = pcl::IndicesPtr (new pcl::Indices);
   this->coarse_truss_idx = pcl::IndicesPtr (new pcl::Indices);
@@ -28,7 +29,7 @@ GroundFilter::GroundFilter() {
   this->metrics_time = 0;
   this->ratio_threshold = 0.3f;
   this->module_threshold = 1000.0f;
-  this->ransac_threshold = 0.5f;
+  this->sac_threshold = 0.5f;
   this->mode = MODE::HYBRID;
   this->cloud_id = "NO_ID";
 }
@@ -40,11 +41,20 @@ GroundFilter::~GroundFilter() {
 
 void GroundFilter::set_input_cloud(pcl::PointCloud<pcl::PointXYZL>::Ptr &_cloud){
 
-  gt_indices tmp_gt =  getGroundTruthIndices(_cloud);
+  this->cloud_in_labeled = _cloud;
+  
+  if(this->density_first) {
+    this->enable_density_filter = false;
+    this->density_filter();
+  }
+
+  gt_indices tmp_gt =  getGroundTruthIndices(this->cloud_in_labeled);
   this->gt_truss_idx = tmp_gt.truss;
   this->gt_ground_idx = tmp_gt.ground;
 
-  pcl::copyPointCloud(*_cloud, *this->cloud_in);
+  // this->ground_data_ratio = (float)this->gt_ground_idx->size() / ((float)this->gt_ground_idx->size() + (float)this->gt_truss_idx->size());
+
+  pcl::copyPointCloud(*this->cloud_in_labeled, *this->cloud_in);
 }
 
 void GroundFilter::set_mode(MODE _mode){
@@ -77,8 +87,12 @@ int GroundFilter::compute()
     this->fine_segmentation();
     this->update_segmentation();
 
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
   
   case MODE::MODULE:
@@ -86,8 +100,12 @@ int GroundFilter::compute()
     this->coarse_segmentation();
     this->fine_segmentation();
     this->update_segmentation();
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
 
   case MODE::HYBRID:
@@ -96,24 +114,36 @@ int GroundFilter::compute()
     this->coarse_segmentation();
     this->fine_segmentation();
     this->update_segmentation();
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
 
   case MODE::WOCOARSE_RATIO:
     this->ratio_threshold = this->node_width / this->node_length;
     this->fine_segmentation();
     this->update_segmentation();
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
 
   case MODE::WOCOARSE_MODULE:
     this->module_threshold = this->node_length;
     this->fine_segmentation();
     this->update_segmentation();
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
 
   case MODE::WOCOARSE_HYBRID:
@@ -121,15 +151,23 @@ int GroundFilter::compute()
     this->module_threshold = this->node_length;
     this->fine_segmentation();
     this->update_segmentation();
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
 
   case MODE::WOFINE:
     this->coarse_segmentation();
     this->update_segmentation();
-    if(this->enable_density_filter)
+    if(this->enable_density_filter and this->enable_euclidean_clustering)
+      std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
+    else if(this->enable_density_filter)
       this->density_filter();
+    else if(this->enable_euclidean_clustering)
+        this->euclidean_clustering();
     break;
 
   default:
@@ -155,8 +193,8 @@ void GroundFilter::coarse_segmentation(){
   pcl::ModelCoefficientsPtr tmp_plane_coefss (new pcl::ModelCoefficients);
 
   tmp_cloud = arvc::voxel_filter(this->cloud_in, this->voxel_size);
-  tmp_plane_coefss = arvc::compute_planar_ransac(tmp_cloud, true, this->ransac_threshold, 1000);
-  auto coarse_indices = arvc::get_points_near_plane(this->cloud_in, tmp_plane_coefss, this->ransac_threshold);
+  tmp_plane_coefss = arvc::compute_planar_ransac(tmp_cloud, true, this->sac_threshold, 1000);
+  auto coarse_indices = arvc::get_points_near_plane(this->cloud_in, tmp_plane_coefss, this->sac_threshold);
   this->coarse_ground_idx = coarse_indices.first;
   this->coarse_truss_idx = coarse_indices.second;
 }
@@ -196,25 +234,45 @@ void GroundFilter::validate_clusters(){
   case MODE::RATIO:
     this->valid_clusters = this->validate_clusters_by_ratio();
     break;
-  
   case MODE::MODULE:
     this->valid_clusters = this->validate_clusters_by_module();
     break;
-
   case MODE::HYBRID:
     this->valid_clusters = this->validate_clusters_hybrid();
     break;
-
+  case MODE::WOCOARSE_RATIO:
+    this->valid_clusters = this->validate_clusters_by_ratio();
+    break;
+  case MODE::WOCOARSE_MODULE:
+    this->valid_clusters = this->validate_clusters_by_module();
+    break;
+  case MODE::WOCOARSE_HYBRID:
+    this->valid_clusters = this->validate_clusters_hybrid();
+    break;
+  case MODE::WOFINE:
+    break;
   default:
     break;
   }
 }
 
 void GroundFilter::density_filter(){
-  this->cons.debug("Density filter");
 
-  this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
-  this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
+  if (this->density_first){
+    this->cons.debug("Density filter FIRST");
+    pcl::RadiusOutlierRemoval<pcl::PointXYZL> radius_removal;
+    radius_removal.setInputCloud(this->cloud_in_labeled);
+    radius_removal.setRadiusSearch(this->density_radius);
+    radius_removal.setMinNeighborsInRadius(this->density_threshold);
+    radius_removal.setNegative(false);
+    radius_removal.filter(*this->cloud_in_labeled);
+  }
+  else {
+    this->cons.debug("Density filter");
+    this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
+    this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
+  }
+
 }
 
 void GroundFilter::euclidean_clustering(){
@@ -231,7 +289,23 @@ void GroundFilter::euclidean_clustering(){
   ec.setInputCloud(this->cloud_in);
   ec.setIndices(this->truss_idx);
   ec.extract(this->euclid_clusters);
+
+  // Get largest cluster
+  int largest_cluster_size = 0;
+  int largest_cluster_idx = 0;
+  for (int i = 0; i < this->euclid_clusters.size(); i++)
+  {
+    if (this->euclid_clusters[i].indices.size() > largest_cluster_size)
+    {
+      largest_cluster_size = this->euclid_clusters[i].indices.size();
+      largest_cluster_idx = i;
+    }
+  }
+
+  *this->truss_idx = this->euclid_clusters[largest_cluster_idx].indices;
+  *this->ground_idx = *arvc::inverseIndices(this->cloud_in, this->truss_idx);
 }
+
 
 void GroundFilter::update_segmentation(){
   // Update truss and ground indices for final segmentation
@@ -386,7 +460,7 @@ void GroundFilter::view_final_segmentation(){
     pcl::visualization::PCLVisualizer my_vis;
     my_vis.setBackgroundColor(1,1,1);
 
-    fs::path camera_params_path = "/home/arvc/workSpaces/rrss_grnd_filter/examples/minkunet_predictions/" + this->cloud_id + "_camera_params.txt";
+    fs::path camera_params_path = "/home/fran/workSpaces/arvc_ws/src/" + this->cloud_id + "_camera_params.txt";
 
     try
     {
@@ -404,9 +478,13 @@ void GroundFilter::view_final_segmentation(){
     pcl::visualization::PointCloudColorHandlerCustom<PointT> ground_color (ground_cloud, 100,100,100);
     pcl::visualization::PointCloudColorHandlerCustom<PointT> error_color (error_cloud, 200,10,10);
 
+
     my_vis.addPointCloud(truss_cloud, truss_color, "truss_cloud");
-    my_vis.addPointCloud(ground_cloud, ground_color, "wrong_cloud");
+    my_vis.addPointCloud(ground_cloud, ground_color, "ground_cloud");
     my_vis.addPointCloud(error_cloud, error_color, "error_cloud");
+    my_vis.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "truss_cloud");
+    my_vis.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "ground_cloud");
+    my_vis.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "error_cloud");
 
     my_vis.addCoordinateSystem(0.8, "sensor_origin");
     auto pos = cloud_in->sensor_origin_;

@@ -2,14 +2,20 @@ EN_DEBUG: false
 EN_VISUAL: false
 EN_METRIC: true
 
-density:
+DENSITY:
+  first: false
   enable: true
-  radius: 0.1 #0.1
-  threshold: 5 #5
+  radius: 0.075 #0.075
+  threshold: 5 #5  
 
-MODE: "ratio"
-NODE_LENGTH: 1.0
-NODE_WIDTH: 0.2
-SAC_THRESHOLD: 0.5
+EUCLID:
+  enable: false
+  radius: 0.5
+  min_size: 5
+
+MODE: "wofine"
+NODE_LENGTH: 2.1
+NODE_WIDTH: 0.21
+SAC_THRESHOLD: 0.5 #optim 0.25
 VOXEL_SIZE: 0.05 
 CROP_SET: 0
