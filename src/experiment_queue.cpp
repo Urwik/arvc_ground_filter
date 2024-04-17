@@ -91,6 +91,7 @@ void experiment(exp_config _config){
         gf.set_sac_threshold(SAC_THRESHOLD);
         gf.set_voxel_size(_config.VOXEL_SIZE);
 
+        gf.density_first            = false;
         gf.enable_density_filter    = _config.EN_DENSITY;
         gf.density_radius           = _config.DENSITY_RADIUS;
         gf.density_threshold        = _config.DENSITY_THRESHOLD;
@@ -160,7 +161,7 @@ void experiment(exp_config _config){
     data.tn = arvc::Metrics::getMean<int>(global_metrics.tn);
     data.fp = arvc::Metrics::getMean<int>(global_metrics.fp);
     data.fn = arvc::Metrics::getMean<int>(global_metrics.fn);
-    data.exec_time = (int) (duration.count() -   metrics_time) / dataset_size;
+    data.exec_time = (int) floor((duration.count() -   metrics_time) / dataset_size);
     data.ground_size = (int)round(num_ground_idx/dataset_size);
     data.truss_size = (int)round(num_truss_idx/dataset_size);
     data.density_threshold = _config.DENSITY_THRESHOLD;
@@ -204,18 +205,6 @@ int main(int argc, char **argv)
     e_config.CLUSTER_MIN_SIZE        = config["EUCLID"]["min_size"].as<int>();
 
     int NUM_OF_MODES = 7;
-
-    float extra_length = 0.05f;
-    float extra_width = 0.05f;
-
-    // vector<int> DEN_THRESHOLD(20);
-    // int start = 0;
-    // std::generate(DEN_THRESHOLD.begin(), DEN_THRESHOLD.end(), [&start]() { return start += 2; });
-
-    // vector<float> SAC_THRESHOLD(20);
-    // float start = 0;
-    // std::generate(SAC_THRESHOLD.begin(), SAC_THRESHOLD.end(), [&start]() { return start += 0.05; });
-
 
     std::vector<std::thread> threads;
 

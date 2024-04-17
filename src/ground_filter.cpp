@@ -41,20 +41,21 @@ GroundFilter::~GroundFilter() {
 
 void GroundFilter::set_input_cloud(pcl::PointCloud<pcl::PointXYZL>::Ptr &_cloud){
 
-  this->cloud_in_labeled = _cloud;
+  // this->cloud_in_labeled = _cloud;
   
-  if(this->density_first) {
-    this->enable_density_filter = false;
-    this->density_filter();
-  }
+  // if(this->density_first) {
+  //   this->enable_density_filter = false;
+  //   this->density_filter();
+  // }
+  // gt_indices tmp_gt =  getGroundTruthIndices(this->cloud_in_labeled);
 
-  gt_indices tmp_gt =  getGroundTruthIndices(this->cloud_in_labeled);
+  gt_indices tmp_gt =  getGroundTruthIndices(_cloud);
   this->gt_truss_idx = tmp_gt.truss;
   this->gt_ground_idx = tmp_gt.ground;
 
   // this->ground_data_ratio = (float)this->gt_ground_idx->size() / ((float)this->gt_ground_idx->size() + (float)this->gt_truss_idx->size());
 
-  pcl::copyPointCloud(*this->cloud_in_labeled, *this->cloud_in);
+  pcl::copyPointCloud(*_cloud, *this->cloud_in);
 }
 
 void GroundFilter::set_mode(MODE _mode){
@@ -258,20 +259,20 @@ void GroundFilter::validate_clusters(){
 
 void GroundFilter::density_filter(){
 
-  if (this->density_first){
-    this->cons.debug("Density filter FIRST");
-    pcl::RadiusOutlierRemoval<pcl::PointXYZL> radius_removal;
-    radius_removal.setInputCloud(this->cloud_in_labeled);
-    radius_removal.setRadiusSearch(this->density_radius);
-    radius_removal.setMinNeighborsInRadius(this->density_threshold);
-    radius_removal.setNegative(false);
-    radius_removal.filter(*this->cloud_in_labeled);
-  }
-  else {
+  // if (this->density_first){
+  //   this->cons.debug("Density filter FIRST");
+  //   pcl::RadiusOutlierRemoval<pcl::PointXYZL> radius_removal;
+  //   radius_removal.setInputCloud(this->cloud_in_labeled);
+  //   radius_removal.setRadiusSearch(this->density_radius);
+  //   radius_removal.setMinNeighborsInRadius(this->density_threshold);
+  //   radius_removal.setNegative(false);
+  //   radius_removal.filter(*this->cloud_in_labeled);
+  // }
+  // else {
     this->cons.debug("Density filter");
     this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
     this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
-  }
+  // }
 
 }
 

@@ -13,9 +13,9 @@ EUCLID:
   radius: 0.5
   min_size: 5
 
-MODE: "wofine"
-NODE_LENGTH: 2.1
-NODE_WIDTH: 0.21
+MODE: "ratio"
+NODE_LENGTH: 2
+NODE_WIDTH: 0.15
 SAC_THRESHOLD: 0.5 #optim 0.25
 VOXEL_SIZE: 0.05 
 CROP_SET: 0

@@ -96,7 +96,7 @@ int main(int argc, char **argv)
             gf.set_input_cloud(input_cloud);
             gf.compute();
         
-            std::cout << entry.stem() <<": " << "Coarse ground size: " << gf.coarse_ground_idx->size() << std::endl;
+            // std::cout << entry.stem() <<": " << "Coarse ground size: " << gf.coarse_ground_idx->size() << std::endl;
             coarse_ground_size_ratio += gf.coarse_ground_idx->size() / input_cloud->size();
 
             // GET IMPORTANT CLOUDS
