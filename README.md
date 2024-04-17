@@ -10,4 +10,4 @@ Its implementation has been carried out using the PCL (Point Cloud Library) libr
 
 Example Datasets
 ----------------
-*[Dataset Folder:](https://drive.google.com/drive/folders/1O4aAby4LBSF-cZ88PPd8CVcFn2Gfvcvy?usp=drive_link)
+* [Dataset Folder:](https://drive.google.com/drive/folders/1O4aAby4LBSF-cZ88PPd8CVcFn2Gfvcvy?usp=drive_link)
