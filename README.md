@@ -8,32 +8,6 @@ Its implementation has been carried out using the PCL (Point Cloud Library) libr
 
 * [PCL: Point Cloud Library](http://pointclouds.org/)
 
-For more information see the article: [Comparative analysis of segmentation techniques for reticular structures](http://)
-
 Example Datasets
 ----------------
-* [Labelled paralellepipeds](https://arvc.umh.es/software/db/hyrecro/arvc_truss_train.zip)
-
-<img src="images/Train_Env.jpg" alt="Train environment example" width="50%">
-
-* [Reticular structure](https://arvc.umh.es/software/db/hyrecro/arvc_truss_test.zip)
-  
-<img src="images/TEST_ENVIROMENT.jpg" alt="Test environment example" width="50%">
-
-Citation
---------
-If you use this code in your research, please cite the following paper:
-```
-@conference{FJSolerRRSSGF,
-  author    = { Francisco Jose Soler and
-                Adrián Peidró and
-                David Valiente and
-                Luis Payá and
-                Oscar Reinoso},
-  title     = {{Comparative analysis of segmentation techniques for reticular structures.}},
-  month     = {Nov 13-15},
-  year      = {2023},
-  address   = {Rome, Italy},
-  publisher = {}
-}
-```
+* [Dataset](https://drive.google.com/drive/folders/1O4aAby4LBSF-cZ88PPd8CVcFn2Gfvcvy?usp=drive_link)
