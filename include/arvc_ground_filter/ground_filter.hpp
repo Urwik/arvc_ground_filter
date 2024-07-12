@@ -4,10 +4,10 @@
 #include <algorithm>
 #include <filesystem>
 #include <chrono>
+#include <yaml-cpp/yaml.h>
 
 #include "tqdm.hpp"
 #include "utils.hpp"
-
 #include "arvc_utils/arvc_metrics.hpp"
 #include "arvc_utils/arvc_console.hpp"
 #include "arvc_utils/arvc_viewer.hpp"
@@ -73,6 +73,7 @@ public:
     
     pcl::IndicesPtr gt_truss_idx;
     pcl::IndicesPtr gt_ground_idx;
+    YAML::Node cfg;
 
 private:
     PointCloud::Ptr cloud_in;

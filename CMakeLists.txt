@@ -54,7 +54,7 @@ include_directories(
 
 
 add_library(arvc_ground_filter src/ground_filter.cpp)
-target_link_libraries(arvc_ground_filter ${PCL_LIBRARIES} ${Eigen3_LIBRARIES})
+target_link_libraries(arvc_ground_filter ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 add_executable(ground_filter_node src/node.cpp)
 target_link_libraries(ground_filter_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})

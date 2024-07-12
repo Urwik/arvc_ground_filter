@@ -78,8 +78,7 @@ void GroundFilter::set_voxel_size(float _voxel_size){
   this->voxel_size = _voxel_size;
 }
 
-int GroundFilter::compute()
-{
+int GroundFilter::compute() {
   switch (this->mode)
   {
   case MODE::RATIO:
@@ -307,13 +306,11 @@ void GroundFilter::euclidean_clustering(){
   *this->ground_idx = *arvc::inverseIndices(this->cloud_in, this->truss_idx);
 }
 
-
 void GroundFilter::update_segmentation(){
   // Update truss and ground indices for final segmentation
   *this->truss_idx = *this->coarse_truss_idx;
   *this->ground_idx = *arvc::inverseIndices(this->cloud_in, this->truss_idx);
 }
-
 
 bool GroundFilter::valid_ratio(pcl::IndicesPtr& _cluster_indices)
 {
