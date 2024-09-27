@@ -7,6 +7,7 @@
 #include <ctime>
 #include <chrono>
 #include <sstream>
+#include "utils.hpp"
 
 #include <thread>
 #include <mutex>
@@ -77,7 +78,9 @@ void experiment(exp_config _config){
     auto start = std::chrono::high_resolution_clock::now();
     for (const fs::path &entry : path_vector)
     {
-        pcl::PointCloud<pcl::PointXYZL>::Ptr input_cloud = read_cloud(entry);
+        pcl::PointCloud<pcl::PointXYZL>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZL>);
+        
+        input_cloud = utils::read_cloud(entry);
         
         GroundFilter gf;
 

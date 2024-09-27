@@ -48,7 +48,8 @@ public:
     pcl::IndicesPtr wrong_idx;
 
     arvc::Metrics metricas;
-    conf_matrix cm;
+    utils::Metrics metrics;
+    utils::ConfusionMatrix cm;
 
     int normals_time;
     int metrics_time;
@@ -67,6 +68,7 @@ public:
 
     float cluster_radius;
     int cluster_min_size;
+    bool save_cloud;
 
     MODE mode;
     arvc::console cons;
@@ -74,6 +76,8 @@ public:
     pcl::IndicesPtr gt_truss_idx;
     pcl::IndicesPtr gt_ground_idx;
     YAML::Node cfg;
+    string cloud_id;
+
 
 private:
     PointCloud::Ptr cloud_in;
@@ -84,13 +88,14 @@ private:
 
     pcl::IndicesPtr tp_idx, fp_idx, fn_idx, tn_idx;
 
-    string cloud_id;
 
     float node_length, node_width, sac_threshold;
 
 public:
 
     GroundFilter();
+
+    GroundFilter(YAML::Node _cfg);
 
     ~GroundFilter();
 

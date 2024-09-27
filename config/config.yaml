@@ -1,9 +1,17 @@
 EN_DEBUG: false
 EN_VISUAL: false
-EN_METRIC: true
+EN_METRIC: false
+SAVE_CLOUD: true
+
+MODE: "ratio"
+NODE_LENGTH: 2
+NODE_WIDTH: 0.15
+SAC_THRESHOLD: 0.5 #optim 0.25
+VOXEL_SIZE: 0.05 
+CROP_SET: 0
 
 DENSITY:
-  first: false
+  first: false # NOT WORKING
   enable: true
   radius: 0.075 #0.075
   threshold: 5 #5  
@@ -13,9 +21,3 @@ EUCLID:
   radius: 0.5
   min_size: 5
 
-MODE: "ratio"
-NODE_LENGTH: 2
-NODE_WIDTH: 0.15
-SAC_THRESHOLD: 0.5 #optim 0.25
-VOXEL_SIZE: 0.05 
-CROP_SET: 0

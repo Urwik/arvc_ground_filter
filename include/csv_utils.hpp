@@ -10,25 +10,34 @@
 namespace fs = std::filesystem;
 
 
-std::string csv_header = "experiment_id,mode,set,set_size,precision,recall,f1_score,tp,tn,fp,fn,exec_time,ground_size,truss_size,density_threshold,euclidean_threshold,voxel_size,sac_threshold,node_length,node_width";
+    std::string csv_header = "EXPERIMENT_ID,MODE,SET,NODE_LENGTH,NODE_WIDTH,SAC_THRESHOLD,VOXEL_SIZE,CROP_SET,SET_SIZE,PRECISION,RECALL,F1_SCORE,ACCURACY,MIOU,TP,TN,FP,FN,EXEC_TIME,GROUND_SIZE,TRUSS_SIZE,ENABLE_DENSITY,DENSITY_FIRST,DENSITY_RADIUS,DENSITY_THRESHOLD,ENABLE_EUCLID,EUCLID_RADIUS,EUCLID_MIN_SIZE";
 
 struct csv_data
 {
     string experiment_id;
-    string mode;
-    int set;
+    string set_id;
     int set_size;
-    float precision, recall, f1_score;
+    float precision, recall, f1_score, accuracy, miou;
     int tp, tn, fp, fn;
     int exec_time;
     int ground_size;
     int truss_size;
-    float density_threshold;
-    float euclidean_threshold;
-    float voxel_size;
-    float sac_threshold;
+    
+    std::string mode;
     float node_length;
     float node_width;
+    float sac_threshold;
+    float voxel_size;
+    int crop_set;
+    
+    bool density_first;
+    bool density_enable;
+    float density_radius;
+    int density_threshold;
+    
+    bool euclid_enable;
+    float euclid_radius;
+    int euclid_min_size;
 };
 
 
@@ -39,7 +48,7 @@ void writeToCSV(const fs::path& dir_path, const csv_data& data) {
         fs::create_directories(dir_path);
     }
 
-    fs::path csv_path = dir_path / "output.csv";
+    fs::path csv_path = dir_path / "test.csv";
     
     
     std::ifstream inFile(csv_path);
@@ -60,28 +69,38 @@ void writeToCSV(const fs::path& dir_path, const csv_data& data) {
         csv_file << csv_header << "\n";
     }
 
-    csv_file << data.experiment_id << ","
-         << data.mode << ","
-         << data.set << ","
-         << data.set_size << ","
-         << data.precision << ","
-         << data.recall << ","
-         << data.f1_score << ","
-         << data.tp << ","
-         << data.tn << ","
-         << data.fp << ","
-         << data.fn << ","
-         << data.exec_time << ","
-         << data.ground_size << ","
-         << data.truss_size << ","
-         << data.density_threshold << ","
-         << data.euclidean_threshold << ","
-         << data.voxel_size << ","
-         << data.sac_threshold << ","
-         << data.node_length << ","
-         << data.node_width << "\n";
-        
+    csv_file << data.experiment_id << ",";
+    csv_file << data.mode << ",";
+    csv_file << data.set_id << ",";
 
+    csv_file << data.node_length << ",";
+    csv_file << data.node_width << ",";
+    csv_file << data.sac_threshold << ",";
+    csv_file << data.voxel_size << ",";
+    csv_file << data.crop_set << ",";
+
+    csv_file << data.set_size << ",";
+    csv_file << data.precision << ",";
+    csv_file << data.recall << ",";
+    csv_file << data.f1_score << ",";
+    csv_file << data.accuracy << ",";
+    csv_file << data.miou << ",";
+    csv_file << data.tp << ",";
+    csv_file << data.tn << ",";
+    csv_file << data.fp << ",";
+    csv_file << data.fn << ",";
+    csv_file << data.exec_time << ",";
+    csv_file << data.ground_size << ",";
+    csv_file << data.truss_size << ",";
+
+    csv_file << data.density_enable << ",";
+    csv_file << data.density_first << ",";
+    csv_file << data.density_radius << ",";
+    csv_file << data.density_threshold << ",";
+
+    csv_file << data.euclid_enable << ",";
+    csv_file << data.euclid_radius << ",";
+    csv_file << data.euclid_min_size << "\n";
 
     csv_file.close();
 }

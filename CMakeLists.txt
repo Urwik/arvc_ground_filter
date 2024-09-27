@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  roslib
 )
 
 
@@ -35,9 +36,9 @@ include_directories(arvc_utils/include)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES arvc_ground_filter
-#  CATKIN_DEPENDS roscpp rospy
+ INCLUDE_DIRS include
+ LIBRARIES arvc_ground_filter
+ CATKIN_DEPENDS roscpp rospy roslib
 #  DEPENDS system_lib
 )
 
@@ -54,10 +55,13 @@ include_directories(
 
 
 add_library(arvc_ground_filter src/ground_filter.cpp)
-target_link_libraries(arvc_ground_filter ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
+target_link_libraries(arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 add_executable(ground_filter_node src/node.cpp)
 target_link_libraries(ground_filter_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
-add_executable(experiment_queue_node src/experiment_queue.cpp)
-target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+add_executable(experiment_queue_node src/utils/experiment_queue_v2.cpp)
+target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
+
+# add_executable(experiment_queue_node src/experiment_queue.cpp)
+# target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})

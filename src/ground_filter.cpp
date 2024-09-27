@@ -32,8 +32,55 @@ GroundFilter::GroundFilter() {
   this->sac_threshold = 0.5f;
   this->mode = MODE::HYBRID;
   this->cloud_id = "NO_ID";
+  this->save_cloud = false;
 }
 
+GroundFilter::GroundFilter(YAML::Node _cfg) {
+  this->cloud_in = PointCloud::Ptr (new PointCloud);
+  this->cloud_out = pcl::PointCloud<pcl::PointXYZL>::Ptr (new pcl::PointCloud<pcl::PointXYZL>);
+  this->cloud_in_labeled = pcl::PointCloud<pcl::PointXYZL>::Ptr (new pcl::PointCloud<pcl::PointXYZL>);
+
+  this->coarse_ground_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->coarse_truss_idx = pcl::IndicesPtr (new pcl::Indices);
+
+  this->truss_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->ground_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->gt_truss_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->gt_ground_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->low_density_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->wrong_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->tp_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->fp_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->fn_idx = pcl::IndicesPtr (new pcl::Indices);
+  this->tn_idx = pcl::IndicesPtr (new pcl::Indices);
+
+  this->normals_time = 0;
+  this->metrics_time = 0;
+
+  this->cons.enable = _cfg["EN_DEBUG"].as<bool>();
+  this->cons.enable_vis = _cfg["EN_VISUAL"].as<bool>();
+  this->enable_metrics = _cfg["EN_METRIC"].as<bool>();
+
+  this->node_length = _cfg["NODE_LENGTH"].as<float>();
+  this->node_width = _cfg["NODE_WIDTH"].as<float>();
+  this->sac_threshold = _cfg["SAC_THRESHOLD"].as<float>();
+  this->voxel_size = _cfg["VOXEL_SIZE"].as<float>();
+
+
+  this->density_first = _cfg["DENSITY"]["first"].as<bool>();
+  this->enable_density_filter = _cfg["DENSITY"]["enable"].as<bool>();
+  this->density_radius = _cfg["DENSITY"]["radius"].as<float>();
+  this->density_threshold = _cfg["DENSITY"]["threshold"].as<int>();
+
+  this->enable_euclidean_clustering = _cfg["EUCLID"]["enable"].as<bool>();
+  this->cluster_radius = _cfg["EUCLID"]["radius"].as<float>();
+  this->cluster_min_size = _cfg["EUCLID"]["min_size"].as<int>();
+
+  this->mode = parse_MODE(_cfg["MODE"].as<std::string>());
+  this->save_cloud = _cfg["SAVE_CLOUD"].as<bool>();
+
+  this->cloud_id = "NO_ID";
+}
 
 GroundFilter::~GroundFilter() {
 }
@@ -49,7 +96,7 @@ void GroundFilter::set_input_cloud(pcl::PointCloud<pcl::PointXYZL>::Ptr &_cloud)
   // }
   // gt_indices tmp_gt =  getGroundTruthIndices(this->cloud_in_labeled);
 
-  gt_indices tmp_gt =  getGroundTruthIndices(_cloud);
+  utils::GtIndices tmp_gt =  utils::get_ground_truth_indices(_cloud);
   this->gt_truss_idx = tmp_gt.truss;
   this->gt_ground_idx = tmp_gt.ground;
 
@@ -174,10 +221,39 @@ int GroundFilter::compute() {
     this->cons.debug("ERROR: Invalid mode selected, options are: RATIO, MODULE, HYBRID, WOFINE, WOCOARSE_RATIO, WOCOARSE_MODULE, WOCOARSE_HYBRID", "RED");
     break;
   }
-  
+
+    if (this->save_cloud) {
+      // SAVE THE CLOUD RESULT
+      pcl::PointCloud<pcl::PointXYZL>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZL>);
+      // pcl::PointCloud<pcl::PointXYZL> ground_out (new pcl::PointCloud<pcl::PointXYZL>);
+
+      pcl::copyPointCloud(*cloud_in, *cloud_out);
+
+
+      for(int i = 0; i < cloud_out->points.size(); i++) {
+
+        auto it = std::find(this->truss_idx->begin(), this->truss_idx->end(), i);
+
+        if(it != this->truss_idx->end())
+          cloud_out->points[i].label = 1;
+        else
+          cloud_out->points[i].label = 0;
+      }
+
+      pcl::PLYWriter writer;
+      std::stringstream ss;
+      ss.str("");
+      std::string mode = parse_MODE(this->mode);
+      ss << "/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/results/inferences/" << mode <<"_" << this->cloud_id <<"_result.ply";
+      writer.write(ss.str(), *cloud_out);
+
+    }
+
+  this->cons.debug("Trying to visualizate results", "GREEN");
   if (this->cons.enable_vis)
     this->view_final_segmentation();
 
+  this->cons.debug("Tring to compute metrics", "GREEN");
   if(this->enable_metrics)
     this->compute_metrics();
 
@@ -268,7 +344,7 @@ void GroundFilter::density_filter(){
   //   radius_removal.filter(*this->cloud_in_labeled);
   // }
   // else {
-    this->cons.debug("Density filter");
+    this->cons.debug("Applying Density Filter");
     this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
     this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
   // }
@@ -428,12 +504,13 @@ vector<int> GroundFilter::validate_clusters_hybrid()
 }
 
 void GroundFilter::compute_metrics(){
+  
+  this->cons.debug("Computing metrics...");
   auto start = std::chrono::high_resolution_clock::now();
   
-  this->cm = arvc::compute_conf_matrix(this->gt_truss_idx, this->gt_ground_idx, this->truss_idx, this->ground_idx);
+  this->cm = utils::compute_conf_matrix(this->gt_truss_idx, this->gt_ground_idx, this->truss_idx, this->ground_idx);
 
-  this->metricas.computeMetricsFromConfusionMatrix(this->cm.TP, this->cm.FP, this->cm.FN, this->cm.TN);
-  // this->metricas = arvc::compute_metrics(cm);
+  this->metricas.computeMetricsFromConfusionMatrix(this->cm.tp, this->cm.fp, this->cm.fn, this->cm.tn);
 
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
@@ -447,6 +524,9 @@ void GroundFilter::view_final_segmentation(){
     PointCloud::Ptr truss_cloud (new PointCloud);
     PointCloud::Ptr ground_cloud (new PointCloud);
     pcl::IndicesPtr error_idx (new pcl::Indices);
+
+
+
 
     error_idx->insert(error_idx->end(), this->fp_idx->begin(), this->fp_idx->end());
     error_idx->insert(error_idx->end(), this->fn_idx->begin(), this->fn_idx->end());
