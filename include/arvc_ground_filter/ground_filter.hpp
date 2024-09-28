@@ -8,14 +8,17 @@
 
 #include "tqdm.hpp"
 #include "utils.hpp"
-#include "arvc_utils/arvc_metrics.hpp"
-#include "arvc_utils/arvc_console.hpp"
-#include "arvc_utils/arvc_viewer.hpp"
-#include "arvc_utils/arvc_utils.hpp"
-#include "arvc_utils/arvc_color.hpp"
+#include "arvc_utils/metrics.hpp"
+#include "arvc_utils/console.hpp"
+#include "arvc_utils/viewer.hpp"
+#include "arvc_utils/color.hpp"
+// #include "arvc_utils/utils.hpp"
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/segmentation/extract_clusters.h>
 
 namespace fs = std::filesystem;
 
@@ -71,12 +74,13 @@ public:
     bool save_cloud;
 
     MODE mode;
-    arvc::console cons;
+    arvc::Console cons;
     
     pcl::IndicesPtr gt_truss_idx;
     pcl::IndicesPtr gt_ground_idx;
     YAML::Node cfg;
     string cloud_id;
+    fs::path save_cloud_path;
 
 
 private:
@@ -113,6 +117,9 @@ public:
 
     int compute();
 
+    void save_cloud_result();
+
+    float get_ground_data_ratio();
 
 private:
 

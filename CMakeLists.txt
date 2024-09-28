@@ -15,15 +15,15 @@ find_package(PCL 1.10 REQUIRED)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Yaml-cpp REQUIRED)
 find_package(Threads REQUIRED)
+find_package(arvc_utils REQUIRED)
 
-include_directories(include  ${PCL_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
+include_directories(include arvc_utils ${PCL_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS} ${Eigen3_LIBRARY_DIRS} ${YAML_CPP_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS} ${Eigen3_DEFINITIONS} ${YAML_CPP_DEFINITIONS})
 
 
 
 include_directories(arvc_utils/include)
-
 
 
 ###################################
@@ -38,7 +38,7 @@ include_directories(arvc_utils/include)
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES arvc_ground_filter
- CATKIN_DEPENDS roscpp rospy roslib
+ CATKIN_DEPENDS roscpp rospy roslib arvc_utils
 #  DEPENDS system_lib
 )
 
@@ -55,13 +55,13 @@ include_directories(
 
 
 add_library(arvc_ground_filter src/ground_filter.cpp)
-target_link_libraries(arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
+target_link_libraries(arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} arvc_utils)
 
 add_executable(ground_filter_node src/node.cpp)
 target_link_libraries(ground_filter_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
-add_executable(experiment_queue_node src/utils/experiment_queue_v2.cpp)
-target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
+# add_executable(experiment_queue_node src/utils/experiment_queue_v2.cpp)
+# target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 # add_executable(experiment_queue_node src/experiment_queue.cpp)
 # target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})

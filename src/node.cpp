@@ -15,7 +15,7 @@
 #include <yaml-cpp/yaml.h>
 #include <cstdlib> // For std::getenv
 #include "arvc_ground_filter/ground_filter.hpp"
-#include "arvc_utils/arvc_utils.hpp"
+// #include "arvc_utils/arvc_utils.hpp"
 #include "utils.hpp"
 
 
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
     if (argc > 1)
     {
         fs::path entry = argv[1];
-        input_cloud_xyzln = arvc::readPointCloud<PointIN>(entry);
+        input_cloud_xyzln = utils::readPointCloud<PointIN>(entry);
         pcl::copyPointCloud(*input_cloud_xyzln, *cloud);
 
         GroundFilter gf(config);
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     for (const fs::path &entry : tq::tqdm(path_vector))
     {
         std::cout << "Memory before loading cloud: " << getMemoryUsageInBytes() << " bytes" << std::endl;
-        input_cloud_xyzln = arvc::readPointCloud<PointIN>(entry);
+        input_cloud_xyzln = utils::readPointCloud<PointIN>(entry);
         pcl::copyPointCloud(*input_cloud_xyzln, *cloud);
 
 
@@ -152,6 +152,7 @@ int main(int argc, char **argv)
 
         GroundFilter gf(config);
 
+        gf.cloud_id = entry.stem();
         gf.set_input_cloud(cloud);
         gf.compute();
         

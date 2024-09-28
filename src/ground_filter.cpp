@@ -33,6 +33,7 @@ GroundFilter::GroundFilter() {
   this->mode = MODE::HYBRID;
   this->cloud_id = "NO_ID";
   this->save_cloud = false;
+  this->save_cloud_path = "./inferences/";
 }
 
 GroundFilter::GroundFilter(YAML::Node _cfg) {
@@ -78,6 +79,7 @@ GroundFilter::GroundFilter(YAML::Node _cfg) {
 
   this->mode = parse_MODE(_cfg["MODE"].as<std::string>());
   this->save_cloud = _cfg["SAVE_CLOUD"].as<bool>();
+  this->save_cloud_path = _cfg["SAVE_CLOUD_PATH"].as<std::string>();
 
   this->cloud_id = "NO_ID";
 }
@@ -88,21 +90,15 @@ GroundFilter::~GroundFilter() {
 
 void GroundFilter::set_input_cloud(pcl::PointCloud<pcl::PointXYZL>::Ptr &_cloud){
 
-  // this->cloud_in_labeled = _cloud;
-  
-  // if(this->density_first) {
-  //   this->enable_density_filter = false;
-  //   this->density_filter();
-  // }
-  // gt_indices tmp_gt =  getGroundTruthIndices(this->cloud_in_labeled);
-
   utils::GtIndices tmp_gt =  utils::get_ground_truth_indices(_cloud);
   this->gt_truss_idx = tmp_gt.truss;
   this->gt_ground_idx = tmp_gt.ground;
 
-  // this->ground_data_ratio = (float)this->gt_ground_idx->size() / ((float)this->gt_ground_idx->size() + (float)this->gt_truss_idx->size());
-
   pcl::copyPointCloud(*_cloud, *this->cloud_in);
+}
+
+float GroundFilter::get_ground_data_ratio(){
+  return (float)this->gt_ground_idx->size() / ((float)this->gt_ground_idx->size() + (float)this->gt_truss_idx->size());
 }
 
 void GroundFilter::set_mode(MODE _mode){
@@ -222,32 +218,9 @@ int GroundFilter::compute() {
     break;
   }
 
-    if (this->save_cloud) {
-      // SAVE THE CLOUD RESULT
-      pcl::PointCloud<pcl::PointXYZL>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZL>);
-      // pcl::PointCloud<pcl::PointXYZL> ground_out (new pcl::PointCloud<pcl::PointXYZL>);
-
-      pcl::copyPointCloud(*cloud_in, *cloud_out);
-
-
-      for(int i = 0; i < cloud_out->points.size(); i++) {
-
-        auto it = std::find(this->truss_idx->begin(), this->truss_idx->end(), i);
-
-        if(it != this->truss_idx->end())
-          cloud_out->points[i].label = 1;
-        else
-          cloud_out->points[i].label = 0;
-      }
-
-      pcl::PLYWriter writer;
-      std::stringstream ss;
-      ss.str("");
-      std::string mode = parse_MODE(this->mode);
-      ss << "/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/results/inferences/" << mode <<"_" << this->cloud_id <<"_result.ply";
-      writer.write(ss.str(), *cloud_out);
-
-    }
+  this->cons.debug("Trying to save cloud result", "GREEN");
+  if (this->save_cloud)
+    this->save_cloud_result();
 
   this->cons.debug("Trying to visualizate results", "GREEN");
   if (this->cons.enable_vis)
@@ -260,19 +233,62 @@ int GroundFilter::compute() {
   return 0;
 }
 
+void GroundFilter::save_cloud_result(){
+
+  if (!fs::exists(this->save_cloud_path))
+    fs::create_directories(this->save_cloud_path);
+
+  // SAVE THE CLOUD RESULT
+  pcl::PointCloud<pcl::PointXYZL>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZL>);
+  pcl::copyPointCloud(*this->cloud_in, *cloud_out);
 
 
+  for(int i = 0; i < cloud_out->points.size(); i++) {
+
+    auto it = std::find(this->truss_idx->begin(), this->truss_idx->end(), i);
+
+    if(it != this->truss_idx->end())
+      cloud_out->points[i].label = 1;
+    else
+      cloud_out->points[i].label = 0;
+  }
+
+  pcl::PLYWriter writer;
+  std::stringstream ss;
+  ss.str("");
+  std::string mode = parse_MODE(this->mode);
+  ss << this->save_cloud_path.string() << mode <<"_" << this->cloud_id <<"_inf.ply";
+  writer.write(ss.str(), *cloud_out);
+  this->cons.debug("Cloud saved in: " + ss.str(), "GREEN");
+}
 
 void GroundFilter::coarse_segmentation(){
   this->cons.debug("Coarse segmentation", "GREEN");
   PointCloud::Ptr tmp_cloud (new PointCloud);
   pcl::ModelCoefficientsPtr tmp_plane_coefss (new pcl::ModelCoefficients);
 
-  tmp_cloud = arvc::voxel_filter(this->cloud_in, this->voxel_size);
-  tmp_plane_coefss = arvc::compute_planar_ransac(tmp_cloud, true, this->sac_threshold, 1000);
-  auto coarse_indices = arvc::get_points_near_plane(this->cloud_in, tmp_plane_coefss, this->sac_threshold);
+  tmp_cloud = utils::voxel_filter(this->cloud_in, this->voxel_size);
+  tmp_plane_coefss = utils::compute_planar_ransac(tmp_cloud, true, this->sac_threshold, 1000);
+  auto coarse_indices = utils::get_points_near_plane(this->cloud_in, tmp_plane_coefss, this->sac_threshold);
   this->coarse_ground_idx = coarse_indices.first;
   this->coarse_truss_idx = coarse_indices.second;
+
+  if (this->cons.enable_vis)
+  {
+    this->cons.debug("Visualizing coarse segmentation", "GREEN");
+    pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("RANSAC PLANE DETECTION"));
+    // viewer->setBackgroundColor(1, 1, 1);
+    viewer->addPointCloud<pcl::PointXYZ>(this->cloud_in, "cloud");
+    viewer->addPlane(*tmp_plane_coefss, "plane");
+    viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE, "plane");
+    viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "plane");
+
+    while (!viewer->wasStopped())
+    {
+      viewer->spinOnce();
+    }
+  }
+
 }
 
 void GroundFilter::fine_segmentation(){
@@ -281,9 +297,9 @@ void GroundFilter::fine_segmentation(){
   std::pair<vector<pcl::PointIndices>, int> regrow_output;
   
   if(this->coarse_ground_idx->size() > 0)
-    regrow_output = arvc::regrow_segmentation(this->cloud_in, this->coarse_ground_idx, false);
+    regrow_output = utils::regrow_segmentation(this->cloud_in, this->coarse_ground_idx, false);
   else
-    regrow_output = arvc::regrow_segmentation(this->cloud_in, false);  
+    regrow_output = utils::regrow_segmentation(this->cloud_in, false);  
 
   this->regrow_clusters = regrow_output.first;
   this->normals_time = regrow_output.second;
@@ -345,8 +361,8 @@ void GroundFilter::density_filter(){
   // }
   // else {
     this->cons.debug("Applying Density Filter");
-    this->truss_idx = arvc::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
-    this->ground_idx = arvc::inverseIndices(this->cloud_in, this->truss_idx);
+    this->truss_idx = utils::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
+    this->ground_idx = utils::inverseIndices(this->cloud_in, this->truss_idx);
   // }
 
 }
@@ -379,18 +395,18 @@ void GroundFilter::euclidean_clustering(){
   }
 
   *this->truss_idx = this->euclid_clusters[largest_cluster_idx].indices;
-  *this->ground_idx = *arvc::inverseIndices(this->cloud_in, this->truss_idx);
+  *this->ground_idx = *utils::inverseIndices(this->cloud_in, this->truss_idx);
 }
 
 void GroundFilter::update_segmentation(){
   // Update truss and ground indices for final segmentation
   *this->truss_idx = *this->coarse_truss_idx;
-  *this->ground_idx = *arvc::inverseIndices(this->cloud_in, this->truss_idx);
+  *this->ground_idx = *utils::inverseIndices(this->cloud_in, this->truss_idx);
 }
 
 bool GroundFilter::valid_ratio(pcl::IndicesPtr& _cluster_indices)
 {
-    auto eig_decomp = arvc::compute_eigen_decomposition(this->cloud_in, _cluster_indices, true);
+    auto eig_decomp = utils::compute_eigen_decomposition(this->cloud_in, _cluster_indices, true);
     float size_ratio = eig_decomp.values(1)/eig_decomp.values(2);
 
     if (size_ratio <= this->ratio_threshold){
@@ -404,14 +420,14 @@ bool GroundFilter::valid_module(pcl::IndicesPtr& _cluster_indices){
 
   // GET THE CLOUD REPRESENTING THE CLUSTER
   PointCloud::Ptr cluster_cloud (new PointCloud);
-  cluster_cloud = arvc::extract_indices(this->cloud_in, _cluster_indices);
+  cluster_cloud = utils::extract_indices(this->cloud_in, _cluster_indices);
   
   // COMPUTE CLOUD CENTROID
   Eigen::Vector4f centroid;
   pcl::compute3DCentroid(*cluster_cloud, centroid);
 
   // COMPUTE EIGEN DECOMPOSITION
-  arvc::eig_decomp eigen_decomp = arvc::compute_eigen_decomposition(this->cloud_in, _cluster_indices, false);
+  utils::eig_decomp eigen_decomp = utils::compute_eigen_decomposition(this->cloud_in, _cluster_indices, false);
 
   // Compute transform between the original cloud and the eigen vectors of the cluster
   Eigen::Matrix4f projectionTransform(Eigen::Matrix4f::Identity());
@@ -531,9 +547,9 @@ void GroundFilter::view_final_segmentation(){
     error_idx->insert(error_idx->end(), this->fp_idx->begin(), this->fp_idx->end());
     error_idx->insert(error_idx->end(), this->fn_idx->begin(), this->fn_idx->end());
 
-    truss_cloud = arvc::extract_indices(cloud_in, this->tp_idx, false);
-    ground_cloud = arvc::extract_indices(cloud_in,this->tn_idx, false);
-    error_cloud = arvc::extract_indices(cloud_in, error_idx, false);
+    truss_cloud = utils::extract_indices(cloud_in, this->tp_idx, false);
+    ground_cloud = utils::extract_indices(cloud_in,this->tn_idx, false);
+    error_cloud = utils::extract_indices(cloud_in, error_idx, false);
 
     pcl::visualization::PCLVisualizer my_vis;
     my_vis.setBackgroundColor(1,1,1);

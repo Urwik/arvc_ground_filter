@@ -1,7 +1,8 @@
 EN_DEBUG: false
-EN_VISUAL: false
+EN_VISUAL: true
 EN_METRIC: false
 SAVE_CLOUD: true
+SAVE_CLOUD_PATH: "/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/results/no_density/orto/"
 
 MODE: "ratio"
 NODE_LENGTH: 2
@@ -12,7 +13,7 @@ CROP_SET: 0
 
 DENSITY:
   first: false # NOT WORKING
-  enable: true
+  enable: false
   radius: 0.075 #0.075
   threshold: 5 #5  
 
