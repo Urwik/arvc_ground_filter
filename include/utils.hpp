@@ -321,7 +321,7 @@ namespace utils {
     std::pair<std::vector<pcl::PointIndices>, int>
     regrow_segmentation (PointCloud::Ptr &_cloud_in, pcl::IndicesPtr &_indices, bool _visualize=false)
     {
-    std::cout << "Regrow segmentation a set of indices fomr a cloud" << std::endl;
+    // std::cout << "Regrow segmentation a set of indices fomr a cloud" << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
     // Estimación de normales
