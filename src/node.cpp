@@ -76,8 +76,74 @@ long getMemoryUsageInBytes() {
 }
 
 
+void best_density_estimation(std::vector<fs::path> path_vector, YAML::Node config)
+{
 
-void best_threshold_estimation(std::vector<fs::path> path_vector, YAML::Node config)
+    #include <map>
+    typedef pcl::PointXYZLNormal PointIN;
+
+    // VARIABLES UTILITIES
+    utils::Metrics global_metrics;
+
+    pcl::PointCloud<PointIN>::Ptr input_cloud_xyzln (new pcl::PointCloud<PointIN>);
+    pcl::PointCloud<pcl::PointXYZL>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZL>);
+
+    const int dataset_size = path_vector.size();
+
+    std::map<int, float> threshold_f1_map;
+    
+    const int START_DENSITY_THRESHOLD = config["START_DENSITY_THRESHOLD"].as<int>();
+    const int STEP_DENSITY_THRESHOLD = config["STEP_DENSITY_THRESHOLD"].as<int>();
+
+    int current_threshold = START_DENSITY_THRESHOLD;
+
+    // BUSQUEDA DEL MEJOR THRESHOLD
+    for (int i=0 ;  i < config["ITERATIONS"].as<int>(); i++) {
+
+        if (i > 0)
+            current_threshold = current_threshold + STEP_DENSITY_THRESHOLD;
+
+
+        std::cout << std::endl <<"CURRENT THRESHOLD: " << current_threshold << std::endl;
+        for (const fs::path &entry : tq::tqdm(path_vector))
+        {
+            input_cloud_xyzln = utils::readPointCloud<PointIN>(entry);
+            pcl::copyPointCloud(*input_cloud_xyzln, *cloud);
+
+            config["DENSITY"]["threshold"] = current_threshold;
+            // config["CROP_SET"] = 100;
+
+            GroundFilter gf(config);
+
+            gf.cloud_id = entry.stem();
+            gf.set_input_cloud(cloud);
+            gf.compute();
+            
+            if (config["EN_METRIC"].as<bool>())
+            {
+                global_metrics.tp += gf.cm.tp;
+                global_metrics.tn += gf.cm.tn;
+                global_metrics.fp += gf.cm.fp;
+                global_metrics.fn += gf.cm.fn;
+            }
+        }
+
+        // global_metrics.plotMetrics();
+        threshold_f1_map[current_threshold] = global_metrics.f1_score();
+
+    }
+
+    std::cout << "Threshold F1 Map" << config["DENSITY"]["radius"] << ": " << std::endl;
+    for (auto const& [key, val] : threshold_f1_map)
+    {
+        std::cout << key << " : " << val << std::endl;
+    }
+
+
+}
+
+
+void best_voxel_estimation(std::vector<fs::path> path_vector, YAML::Node config)
 {
 
     typedef pcl::PointXYZLNormal PointIN;
@@ -104,6 +170,8 @@ void best_threshold_estimation(std::vector<fs::path> path_vector, YAML::Node con
         if (i > 0)
             current_voxel = current_voxel + STEP_VOXEL;
 
+
+        std::cout << "CURRENT VOXEL: " << current_voxel << std::endl;
         for (const fs::path &entry : tq::tqdm(path_vector))
         {
             input_cloud_xyzln = utils::readPointCloud<PointIN>(entry);
@@ -159,7 +227,7 @@ int main(int argc, char **argv)
     // const std::string package_path = ros::package::getPath("arvc_ground_filter");
     // const fs::path CONFIG = fs::path(package_path) / "config/config.yaml";
 
-    const fs::path CONFIG = "/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/config/config.yaml";
+    const fs::path CONFIG = "/home/fran/workspaces/arvc_ws/src/arvc_ground_filter/config/config.yaml";
 
     YAML::Node config = YAML::LoadFile(CONFIG.string());
     
@@ -210,78 +278,53 @@ int main(int argc, char **argv)
     }
 
 
-    best_threshold_estimation(path_vector, config);
-    return 0;
-
-    // auto start = std::chrono::high_resolution_clock::now();
-    // for (const fs::path &entry : tq::tqdm(path_vector))
-    // {
-    //     std::cout << "Memory before loading cloud: " << getMemoryUsageInBytes() << " bytes" << std::endl;
-    //     input_cloud_xyzln = utils::readPointCloud<PointIN>(entry);
-    //     pcl::copyPointCloud(*input_cloud_xyzln, *cloud);
-
-
-    //     std::cout << "Memory after loading cloud: " << getMemoryUsageInBytes() << " bytes" << std::endl;
-
-    //     GroundFilter gf(config);
-
-    //     gf.cloud_id = entry.stem();
-    //     gf.set_input_cloud(cloud);
-    //     gf.compute();
-        
-    //     std::cout << "Memory after filtering: " << getMemoryUsageInBytes() << " bytes" << std::endl;
-
-
-    //     normals_time += gf.normals_time;
-    //     metrics_time += gf.metrics_time;
-
-    //     if (config["EN_METRIC"].as<bool>())
-    //     {
-    //         global_metrics.tp += gf.cm.tp;
-    //         global_metrics.tn += gf.cm.tn;
-    //         global_metrics.fp += gf.cm.fp;
-    //         global_metrics.fn += gf.cm.fn;
-    //     }
-    // }
-
-    // global_metrics.plotMetrics();
-
-    // std::cout << "Memory after all computations: " << getMemoryUsageInBytes() << " bytes" << std::endl;
-
-
-    // // PRINT COMPUTATION TIME
-    // auto stop = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-
-    // int avg_time = (int)floor((duration.count() - metrics_time) / dataset_size);
-    // std::cout << "Average Computation Time: " << avg_time << " ms" << std::endl;
-
+    // best_voxel_estimation(path_vector, config);
+    // best_density_estimation(path_vector,config);
     // return 0;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (const fs::path &entry : tq::tqdm(path_vector))
+    {
+        std::cout << "Memory before loading cloud: " << getMemoryUsageInBytes() << " bytes" << std::endl;
+        input_cloud_xyzln = utils::readPointCloud<PointIN>(entry);
+        pcl::copyPointCloud(*input_cloud_xyzln, *cloud);
+
+
+        std::cout << "Memory after loading cloud: " << getMemoryUsageInBytes() << " bytes" << std::endl;
+
+        GroundFilter gf(config);
+
+        gf.cloud_id = entry.stem();
+        gf.set_input_cloud(cloud);
+        gf.compute();
+        
+        std::cout << "Memory after filtering: " << getMemoryUsageInBytes() << " bytes" << std::endl;
+
+
+        normals_time += gf.normals_time;
+        metrics_time += gf.metrics_time;
+
+        if (config["EN_METRIC"].as<bool>())
+        {
+            global_metrics.tp += gf.cm.tp;
+            global_metrics.tn += gf.cm.tn;
+            global_metrics.fp += gf.cm.fp;
+            global_metrics.fn += gf.cm.fn;
+        }
+    }
+
+    global_metrics.plotMetrics();
+
+    std::cout << "Memory after all computations: " << getMemoryUsageInBytes() << " bytes" << std::endl;
+
+
+    // PRINT COMPUTATION TIME
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+    int avg_time = (int)floor((duration.count() - metrics_time) / dataset_size);
+    std::cout << "Average Computation Time: " << avg_time << " ms" << std::endl;
+
+    return 0;
 }
 
-    // coarse_ground_size_ratio += gf.coarse_ground_idx->size() / cloud->size();
-
-    /*
-    // GET IMPORTANT CLOUDS
-    float recall_hybrid = gf.metricas.values.recall;
-    gf.computeWOfine();
-    float recall_WOfine = gf.metricas.values.recall;
-
-    if (recall_hybrid > recall_WOfine)
-    {
-        cout << GREEN << gf.path.stem() << RESET << endl;
-    } 
-
-    if (gf.metricas.values.recall > best_recall)
-    {
-        best_recall = gf.metricas.values.recall;
-        best_recall_cloud = entry.stem();
-    }
-    */
-
-    // float avg_coarse_ground_size_ratio = coarse_ground_size_ratio / dataset_size;
-
-    // std::cout << "Coarse ground size ratio: " << avg_coarse_ground_size_ratio << std::endl;
-
-    // std::cout << BLUE << "Best recall: " << best_recall_cloud << RESET << endl;
-    // std::cout << YELLOW << "Code end!!" << RESET << std::endl;

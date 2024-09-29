@@ -1,24 +1,29 @@
 EN_DEBUG: false
-EN_VISUAL: true
+EN_VISUAL: false
 EN_METRIC: true
 SAVE_CLOUD: false
-SAVE_CLOUD_PATH: "/home/arvc/workSpaces/arvc_ws/src/arvc_ground_filter/results/no_density/orto/"
+SAVE_CLOUD_PATH: "/home/fran/workspaces/arvc_ws/src/arvc_ground_filter/results/no_density/orto/"
 
 MODE: "wofine"
 NODE_LENGTH: 2
 NODE_WIDTH: 0.15
 SAC_THRESHOLD: 0.5 #optim 0.25
-VOXEL_SIZE: 0.05 
-CROP_SET: 1
+VOXEL_SIZE: 0.1 
+CROP_SET: 100
 
+
+ITERATIONS: 10
 START_VOXEL: 0.05
 STEP_VOXEL: 0.05
+
+START_DENSITY_THRESHOLD: 2
+STEP_DENSITY_THRESHOLD: 2
 
 DENSITY:
   first: false # NOT WORKING
   enable: true
-  radius: 0.075 #0.075
-  threshold: 5 #5  
+  radius: 0.25 #0.075
+  threshold: 10 #5  
 
 EUCLID:
   enable: false
