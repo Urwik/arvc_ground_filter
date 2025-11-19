@@ -80,6 +80,7 @@ public:
     pcl::IndicesPtr gt_ground_idx;
     YAML::Node cfg;
     string cloud_id;
+    std::string dataset_id;
     fs::path save_cloud_path;
 
 

@@ -34,6 +34,7 @@ GroundFilter::GroundFilter() {
   this->cloud_id = "NO_ID";
   this->save_cloud = false;
   this->save_cloud_path = "./inferences/";
+  this->dataset_id = "NO_ID";
 }
 
 GroundFilter::GroundFilter(YAML::Node _cfg) {
@@ -235,8 +236,12 @@ int GroundFilter::compute() {
 
 void GroundFilter::save_cloud_result(){
 
-  if (!fs::exists(this->save_cloud_path))
-    fs::create_directories(this->save_cloud_path);
+  fs::path save_dir;
+
+  save_dir = this->save_cloud_path / this->dataset_id / parse_MODE(this->mode);
+
+  if (!fs::exists(save_dir))
+    fs::create_directories(save_dir);
 
   // SAVE THE CLOUD RESULT
   pcl::PointCloud<pcl::PointXYZL>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZL>);
@@ -257,7 +262,7 @@ void GroundFilter::save_cloud_result(){
   std::stringstream ss;
   ss.str("");
   std::string mode = parse_MODE(this->mode);
-  ss << this->save_cloud_path.string() << mode <<"_" << this->cloud_id <<"_inf.ply";
+  ss << save_dir.string() << "/" << this->cloud_id <<"_inf.ply";
   writer.write(ss.str(), *cloud_out);
   this->cons.debug("Cloud saved in: " + ss.str(), "GREEN");
 }
@@ -362,7 +367,7 @@ void GroundFilter::density_filter(){
   // else {
     this->cons.debug("Applying Density Filter");
     this->truss_idx = utils::radius_outlier_removal(this->cloud_in, this->truss_idx, this->density_radius, this->density_threshold, false);
-    this->ground_idx = utils::inverseIndices(this->cloud_in, this->truss_idx);
+    *this->ground_idx = *utils::inverseIndices(this->cloud_in, this->truss_idx);
   // }
 
 }
@@ -525,8 +530,7 @@ void GroundFilter::compute_metrics(){
   auto start = std::chrono::high_resolution_clock::now();
   
   this->cm = utils::compute_conf_matrix(this->gt_truss_idx, this->gt_ground_idx, this->truss_idx, this->ground_idx);
-
-  this->metricas.computeMetricsFromConfusionMatrix(this->cm.tp, this->cm.fp, this->cm.fn, this->cm.tn);
+  // this->metricas.computeMetricsFromConfusionMatrix(this->cm.tp, this->cm.fp, this->cm.fn, this->cm.tn);
 
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
