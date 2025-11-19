@@ -29,6 +29,28 @@ pcl::PointCloud<pcl::PointXYZL>::Ptr read_cloud( fs::path _path) {
     return cloud;
 }
 
+template <typename T>
+typename pcl::PointCloud<T>::Ptr readPointCloud(const fs::path &path) {
+ 
+    if (!fs::exists(path)) {
+        throw std::runtime_error("File does not exist: " + path.string());
+    }
+
+    if (path.extension() == ".pcd") {
+        pcl::PCDReader reader;
+        typename pcl::PointCloud<T>::Ptr cloud (new pcl::PointCloud<T>); 
+        reader.read(path.string(), *cloud);
+        return cloud;
+    }
+
+    if (path.extension() == ".ply") {
+        pcl::PLYReader reader;
+        typename pcl::PointCloud<T>::Ptr cloud (new pcl::PointCloud<T>); 
+        reader.read(path.string(), *cloud);
+        return cloud;
+    }
+}
+
 
 gt_indices getGroundTruthIndices(pcl::PointCloud<pcl::PointXYZL>::Ptr &_cloud) {
   
