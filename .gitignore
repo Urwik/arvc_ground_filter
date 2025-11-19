@@ -1,3 +1,5 @@
 .vscode/
 build/
+results*/
+src/utils/
 CATKIN_IGNORE
