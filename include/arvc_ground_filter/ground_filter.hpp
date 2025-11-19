@@ -22,13 +22,13 @@ namespace fs = std::filesystem;
 using namespace std;
 
 enum class MODE{
-    RATIO,
-    MODULE,
-    HYBRID,
-    WOFINE,
-    WOCOARSE_RATIO,
-    WOCOARSE_MODULE,
-    WOCOARSE_HYBRID
+    RATIO = 0,
+    MODULE = 1,
+    HYBRID = 2,
+    WOFINE = 3,
+    WOCOARSE_RATIO = 4,
+    WOCOARSE_MODULE = 5,
+    WOCOARSE_HYBRID = 6
 };
 
 class GroundFilter
