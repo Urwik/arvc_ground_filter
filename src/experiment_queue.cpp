@@ -15,6 +15,8 @@ std::mutex mtx;
 
 struct exp_config{
     fs::path set_path;
+    fs::path clouds_dir;
+    fs::path output_dir;
     string experiment_id;
     int MODO;
     float NODE_LENGTH;
@@ -57,7 +59,7 @@ void experiment(exp_config _config){
 
     // Save all the paths of the clouds in the current directory for the tqdm loop
     std::vector<fs::path> path_vector;
-    for (const auto &entry : fs::directory_iterator(_config.set_path / "pcd"))
+    for (const auto &entry : fs::directory_iterator(_config.clouds_dir))
     {
         if (entry.path().extension() == ".pcd" || entry.path().extension() == ".ply")
             path_vector.push_back(entry.path());
@@ -75,9 +77,16 @@ void experiment(exp_config _config){
 
     // for (const fs::path &entry : tq::tqdm(path_vector))
     auto start = std::chrono::high_resolution_clock::now();
+    int progress_count = 0;
     for (const fs::path &entry : path_vector)
     {
-        pcl::PointCloud<pcl::PointXYZL>::Ptr input_cloud = read_cloud(entry);
+        std::cout << "Progress: " << progress_count << " / " << dataset_size << std::endl;
+        pcl::PointCloud<pcl::PointXYZL>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZL>);
+        pcl::PointCloud<pcl::PointXYZLNormal>::Ptr in_cloud_xyzln (new pcl::PointCloud<pcl::PointXYZLNormal>);
+
+        in_cloud_xyzln = readPointCloud<pcl::PointXYZLNormal>(entry);
+        pcl::copyPointCloud(*in_cloud_xyzln, *input_cloud);
+
         
         GroundFilter gf;
 
@@ -117,6 +126,7 @@ void experiment(exp_config _config){
         global_metrics.tn.push_back(gf.metricas.values.tn);
         global_metrics.fp.push_back(gf.metricas.values.fp);
         global_metrics.fn.push_back(gf.metricas.values.fn);
+        progress_count++;
     }
 
 
@@ -172,24 +182,24 @@ void experiment(exp_config _config){
     data.node_width = _config.NODE_WIDTH;
     
     mtx.lock();
-    writeToCSV(_config.set_path, data);
+    writeToCSV(_config.output_dir, data);
     mtx.unlock();
 }
 
 
 int main(int argc, char **argv)
 {
-
+    pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
 
     std::cout << YELLOW << "Running your code..." << RESET << std::endl;
 
     const char* homeDir = std::getenv("HOME");
     const string homePath = homeDir;
 
-    YAML::Node config = YAML::LoadFile(homePath + "/workSpaces/arvc_ws/src/arvc_ground_filter/config/config.yaml");
+    YAML::Node config = YAML::LoadFile(homePath + "/workspaces/arvc_ws/src/arvc_ground_filter/config/config.yaml");
     exp_config e_config;
 
-    fs::path dataset_dir = homePath + "/datasets/icinco/v1";
+    fs::path dataset_dir = "/media/arvc/data/datasets/sncs_test/v1";
 
     e_config.MODO                    = static_cast<int>(parse_MODE(config["MODE"].as<string>()));
     e_config.NODE_LENGTH             = config["NODE_LENGTH"].as<float>();
@@ -212,10 +222,16 @@ int main(int argc, char **argv)
     // PARA CADA SET
     for (fs::path set_path : fs::directory_iterator(dataset_dir))
     {
+
+        if (!fs::is_directory(set_path))
+            continue;
+
         std::string set_id = set_path.filename().string();
-        fs::path pcd_path = set_path / "pcd";
+        fs::path clouds_dir = set_path / "ply_xyzln";
 
         e_config.set_path = set_path;
+        e_config.clouds_dir = clouds_dir;
+        e_config.output_dir = homePath + "/workspaces/arvc_ws/src/arvc_ground_filter/results_sncs/" + set_id;
 
         // PARA CADA MODO
         for (int i = 0; i < NUM_OF_MODES; i++)
