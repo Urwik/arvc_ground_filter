@@ -80,6 +80,10 @@ void GroundFilter::set_voxel_size(float _voxel_size){
 
 int GroundFilter::compute()
 {
+  if(this->enable_density_filter && this->density_first) {
+    *this->cloud_in = *arvc::density_filter_cloud( this->cloud_in, this->density_radius, this->density_threshold, false);
+  }
+
   switch (this->mode)
   {
   case MODE::RATIO:
@@ -90,7 +94,7 @@ int GroundFilter::compute()
 
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();
@@ -103,7 +107,7 @@ int GroundFilter::compute()
     this->update_segmentation();
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();
@@ -117,7 +121,7 @@ int GroundFilter::compute()
     this->update_segmentation();
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();
@@ -129,7 +133,7 @@ int GroundFilter::compute()
     this->update_segmentation();
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();
@@ -141,7 +145,7 @@ int GroundFilter::compute()
     this->update_segmentation();
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();
@@ -154,7 +158,7 @@ int GroundFilter::compute()
     this->update_segmentation();
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();
@@ -165,7 +169,7 @@ int GroundFilter::compute()
     this->update_segmentation();
     if(this->enable_density_filter and this->enable_euclidean_clustering)
       std::cout << "ERROR: Density filter and Euclidean clustering cannot be enabled at the same time" << std::endl;
-    else if(this->enable_density_filter)
+    else if(this->enable_density_filter && !this->density_first)
       this->density_filter();
     else if(this->enable_euclidean_clustering)
         this->euclidean_clustering();

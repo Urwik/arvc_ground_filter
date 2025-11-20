@@ -10,12 +10,13 @@
 namespace fs = std::filesystem;
 
 
-std::string csv_header = "experiment_id,mode,set,set_size,precision,recall,f1_score,tp,tn,fp,fn,exec_time,ground_size,truss_size,density_threshold,euclidean_threshold,voxel_size,sac_threshold,node_length,node_width";
+std::string csv_header = "experiment_id,mode,density_fist,set,set_size,precision,recall,f1_score,tp,tn,fp,fn,exec_time,ground_size,truss_size,density_threshold,euclidean_threshold,voxel_size,sac_threshold,node_length,node_width";
 
 struct csv_data
 {
     string experiment_id;
     string mode;
+    bool density_first = false;
     int set;
     int set_size;
     float precision, recall, f1_score;
@@ -62,6 +63,7 @@ void writeToCSV(const fs::path& dir_path, const csv_data& data) {
 
     csv_file << data.experiment_id << ","
          << data.mode << ","
+         << data.density_first << ","
          << data.set << ","
          << data.set_size << ","
          << data.precision << ","

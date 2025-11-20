@@ -52,6 +52,27 @@ typename pcl::PointCloud<T>::Ptr readPointCloud(const fs::path &path) {
 }
 
 
+template <typename T>
+void savePointCloud(const typename pcl::PointCloud<T>::Ptr &cloud, const fs::path &path) {
+    
+    if (!fs::exists(path.parent_path())) {
+        fs::create_directories(path.parent_path());        
+    }
+
+    if (path.extension() == ".pcd") {
+        pcl::PCDWriter writer;
+        writer.write(path.string(), *cloud, true);
+        return;
+    }
+
+    if (path.extension() == ".ply") {
+        pcl::PLYWriter writer;
+        writer.write(path.string(), *cloud, true);
+        return;
+    }
+}
+
+
 gt_indices getGroundTruthIndices(pcl::PointCloud<pcl::PointXYZL>::Ptr &_cloud) {
   
     gt_indices indices;

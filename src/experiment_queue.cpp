@@ -25,6 +25,7 @@ struct exp_config{
     float VOXEL_SIZE;
     int CROP_SET;
 
+    bool DENSITY_FIRST;
     bool EN_DENSITY;
     float DENSITY_THRESHOLD;
     float DENSITY_RADIUS;
@@ -100,7 +101,7 @@ void experiment(exp_config _config){
         gf.set_sac_threshold(SAC_THRESHOLD);
         gf.set_voxel_size(_config.VOXEL_SIZE);
 
-        gf.density_first            = false;
+        gf.density_first            = _config.DENSITY_FIRST;
         gf.enable_density_filter    = _config.EN_DENSITY;
         gf.density_radius           = _config.DENSITY_RADIUS;
         gf.density_threshold        = _config.DENSITY_THRESHOLD;
@@ -175,6 +176,7 @@ void experiment(exp_config _config){
     data.ground_size = (int)round(num_ground_idx/dataset_size);
     data.truss_size = (int)round(num_truss_idx/dataset_size);
     data.density_threshold = _config.DENSITY_THRESHOLD;
+    data.density_first = _config.DENSITY_FIRST;
     data.euclidean_threshold = _config.CLUSTER_MIN_SIZE;
     data.voxel_size = _config.VOXEL_SIZE;
     data.sac_threshold = _config.SAC_THRESHOLD;
@@ -208,6 +210,7 @@ int main(int argc, char **argv)
     e_config.VOXEL_SIZE              = config["VOXEL_SIZE"].as<float>();
     e_config.CROP_SET                = config["CROP_SET"].as<int>();
     e_config.EN_DENSITY              = config["DENSITY"]["enable"].as<bool>();
+    e_config.DENSITY_FIRST           = true;
     e_config.DENSITY_RADIUS          = config["DENSITY"]["radius"].as<float>();
     e_config.DENSITY_THRESHOLD       = config["DENSITY"]["threshold"].as<int>();
     e_config.EN_EUCLIDEAN_CLUSTERING = config["EUCLID"]["enable"].as<bool>();
@@ -223,6 +226,9 @@ int main(int argc, char **argv)
     for (fs::path set_path : fs::directory_iterator(dataset_dir))
     {
 
+        // // Only the set 00 for test proposes
+        // if (set_path.filename().string() != "00") continue;
+
         if (!fs::is_directory(set_path))
             continue;
 
@@ -231,11 +237,14 @@ int main(int argc, char **argv)
 
         e_config.set_path = set_path;
         e_config.clouds_dir = clouds_dir;
-        e_config.output_dir = homePath + "/workspaces/arvc_ws/src/arvc_ground_filter/results_sncs/" + set_id;
+        e_config.output_dir = homePath + "/workspaces/arvc_ws/src/arvc_ground_filter/results_sncs_revision/" + set_id;
 
         // PARA CADA MODO
         for (int i = 0; i < NUM_OF_MODES; i++)
         {
+
+            // if (i != 0) continue; // Only ratio mode (0) for test proposes
+            
             e_config.MODO = i;
 
             if (set_id == "00" || set_id == "03")

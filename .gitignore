@@ -2,4 +2,8 @@
 build/
 results*/
 src/utils/
+debug/
 CATKIN_IGNORE
+scripts/
+venv/
+*/__pycache__/
