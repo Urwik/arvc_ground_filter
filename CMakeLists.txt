@@ -61,3 +61,6 @@ target_link_libraries(ground_filter_node arvc_ground_filter ${CATKIN_LIBRARIES} 
 
 add_executable(experiment_queue_node src/experiment_queue.cpp)
 target_link_libraries(experiment_queue_node arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+add_executable(run_exp_single_thread src/exp_queue_single_threaded.cpp)
+target_link_libraries(run_exp_single_thread arvc_ground_filter ${CATKIN_LIBRARIES} ${PCL_LIBRARIES} ${Eigen3_LIBRARIES} ${YAML_CPP_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})

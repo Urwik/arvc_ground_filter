@@ -33,6 +33,9 @@ struct exp_config{
     bool EN_EUCLIDEAN_CLUSTERING;
     float CLUSTER_RADIUS;
     int CLUSTER_MIN_SIZE;
+    bool SAVE_SEGMENTED_CLOUD;
+    bool EN_VISUALIZATION;
+    bool EN_METRICS;
 
 };
 
@@ -92,8 +95,8 @@ void experiment(exp_config _config){
         GroundFilter gf;
 
         gf.cons.enable = false;
-        gf.cons.enable_vis = false;
-        gf.enable_metrics = true;
+        gf.cons.enable_vis = _config.EN_VISUALIZATION;
+        gf.enable_metrics = _config.EN_METRICS;
 
         gf.set_mode(modo);
         gf.set_node_length(NODE_LENGTH);
@@ -109,9 +112,27 @@ void experiment(exp_config _config){
         gf.enable_euclidean_clustering  = _config.EN_EUCLIDEAN_CLUSTERING;
         gf.cluster_radius               = _config.CLUSTER_RADIUS;
         gf.cluster_min_size             = _config.CLUSTER_MIN_SIZE;
-
         gf.set_input_cloud(input_cloud);
         gf.compute();
+
+
+        if (_config.SAVE_SEGMENTED_CLOUD) {
+            pcl::PointCloud<pcl::PointXYZL>::Ptr segmented_cloud (new pcl::PointCloud<pcl::PointXYZL>);
+            pcl::copyPointCloud(*input_cloud, *segmented_cloud);
+
+            for (size_t i = 0; i < input_cloud->points.size(); i++) {
+
+                if (std::find(gf.truss_idx->begin(), gf.truss_idx->end(), i) != gf.truss_idx->end())
+                    segmented_cloud->points[i].label = 1;
+                else
+                    segmented_cloud->points[i].label = 0;
+            }
+
+
+            fs::path save_path = _config.output_dir / (entry.stem().string() + ".ply");
+            savePointCloud<pcl::PointXYZL>(segmented_cloud, save_path);
+        }
+
 
         num_ground_idx += gf.gt_ground_idx->size();
         num_truss_idx += gf.gt_truss_idx->size();
@@ -210,12 +231,14 @@ int main(int argc, char **argv)
     e_config.VOXEL_SIZE              = config["VOXEL_SIZE"].as<float>();
     e_config.CROP_SET                = config["CROP_SET"].as<int>();
     e_config.EN_DENSITY              = config["DENSITY"]["enable"].as<bool>();
-    e_config.DENSITY_FIRST           = true;
+    e_config.DENSITY_FIRST           = false;
     e_config.DENSITY_RADIUS          = config["DENSITY"]["radius"].as<float>();
     e_config.DENSITY_THRESHOLD       = config["DENSITY"]["threshold"].as<int>();
     e_config.EN_EUCLIDEAN_CLUSTERING = config["EUCLID"]["enable"].as<bool>();
     e_config.CLUSTER_RADIUS          = config["EUCLID"]["radius"].as<float>();
     e_config.CLUSTER_MIN_SIZE        = config["EUCLID"]["min_size"].as<int>();
+    e_config.SAVE_SEGMENTED_CLOUD    = config["SAVE_SEGMENTED_CLOUD"].as<bool>();
+    e_config.EN_VISUALIZATION        = config["EN_VISUAL"].as<bool>();
 
     int NUM_OF_MODES = 7;
 
@@ -226,8 +249,8 @@ int main(int argc, char **argv)
     for (fs::path set_path : fs::directory_iterator(dataset_dir))
     {
 
-        // // Only the set 00 for test proposes
-        // if (set_path.filename().string() != "00") continue;
+        // Only the set 00 and 05 for test proposes
+        if (set_path.filename().string() != "00" && set_path.filename().string() != "05") continue;
 
         if (!fs::is_directory(set_path))
             continue;
@@ -242,8 +265,7 @@ int main(int argc, char **argv)
         // PARA CADA MODO
         for (int i = 0; i < NUM_OF_MODES; i++)
         {
-
-            // if (i != 0) continue; // Only ratio mode (0) for test proposes
+            if (i != 2) continue; // Only hybrid mode (2) for test proposes
             
             e_config.MODO = i;
 

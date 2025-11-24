@@ -287,9 +287,9 @@ void GroundFilter::euclidean_clustering(){
   tree->setInputCloud(this->cloud_in);
 
   pcl::EuclideanClusterExtraction<PointT> ec;
-  ec.setClusterTolerance(0.5);
-  ec.setMinClusterSize(100);
-  ec.setMaxClusterSize(25000);
+  ec.setClusterTolerance( this->cluster_radius ); // 2cm
+  ec.setMinClusterSize(this->cluster_min_size); // 100 points
+  ec.setMaxClusterSize(this->cloud_in->size());
   ec.setSearchMethod(tree);
   ec.setInputCloud(this->cloud_in);
   ec.setIndices(this->truss_idx);

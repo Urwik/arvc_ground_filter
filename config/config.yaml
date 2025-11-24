@@ -1,6 +1,7 @@
 EN_DEBUG: false
 EN_VISUAL: false
 EN_METRIC: true
+SAVE_SEGMENTED_CLOUD: true
 
 DENSITY:
   first: false
@@ -13,7 +14,7 @@ EUCLID:
   radius: 0.5
   min_size: 5
 
-MODE: "ratio"
+MODE: "hybrid" # "ratio", "module", "hybrid", "wofine", "wocoarse_ratio", "wocoarse_module", "wocoarse_hybrid"
 NODE_LENGTH: 2
 NODE_WIDTH: 0.15
 SAC_THRESHOLD: 0.5 #optim 0.25
